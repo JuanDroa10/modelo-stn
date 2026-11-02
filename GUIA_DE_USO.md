@@ -1,8 +1,8 @@
 # Guía de uso del modelo del STN
 
-Esta guía explica **cómo se usa el modelo**, opción por opción y pregunta por
-pregunta. El [README](README.md) cuenta qué es el modelo y cómo se instala;
-aquí empezamos donde aquel termina, con el menú ya abierto.
+Esta guía explica cómo utilizar el modelo y describe el funcionamiento de cada opción del menú.
+
+El [README](README.md) presenta el modelo y explica el procedimiento de instalación. Esta guía parte de ese punto y se centra en el uso del menú una vez iniciado.
 
 ```bash
 python menu.py
@@ -12,73 +12,65 @@ python menu.py
 
 ## Índice
 
-1. [Lo primero: el punto de operación](#1-lo-primero-el-punto-de-operación)
-2. [Cómo se navega el menú](#2-cómo-se-navega-el-menú)
+1. [Selección del punto de operación](#1-selección-del-punto-de-operación)
+2. [Navegación por el menú](#2-navegación-por-el-menú)
 3. [Simular](#3-simular) — opciones 1 a 8
 4. [Consultar el modelo](#4-consultar-el-modelo) — opciones 9 a 14
 5. [Análisis](#5-análisis) — opciones 15 a 18
-6. [Lo mismo desde la línea de órdenes](#6-lo-mismo-desde-la-línea-de-órdenes)
-7. [Antes de citar una cifra](#7-antes-de-citar-una-cifra)
+6. [Ejecución desde la línea de comandos](#6-ejecución-desde-la-línea-de-comandos)
+7. [Consideraciones para interpretar los resultados](#7-consideraciones-para-interpretar-los-resultados)
 8. [Problemas frecuentes](#8-problemas-frecuentes)
+9. [Verificación del modelo](#9-verificación-del-modelo)
 
 ---
 
-## 1. Lo primero: el punto de operación
+## 1. Selección del punto de operación
 
-El menú **no pregunta qué análisis quieres, sino sobre qué sistema**. Esa
-elección vale para toda la sesión y aparece en una banda en la cabecera de
-todas las pantallas.
+Antes de ejecutar un análisis, el menú solicita seleccionar el **punto de operación del sistema**. Esta selección se mantiene durante toda la sesión y se muestra en la cabecera de las pantallas.
 
-```
+```text
 SOBRE QUE SISTEMA QUIERES TRABAJAR
-   (aqui el menu explica el respaldo de cada uno)
    Punto de operacion:
      * 1) punta nocturna 18-22 h  (el caso MEDIDO y validado)
        2) diurno 10-11 h  (con sol; DERIVADO de la punta, no validado)
        3) una fecha concreta  (despacho y pronostico reales de XM)
 ```
 
-El `*` marca el valor por defecto: pulsar Enter elige la punta.
+El asterisco (`*`) identifica la opción predeterminada. Al pulsar Enter, se selecciona la punta nocturna.
 
-### Los tres puntos no tienen el mismo respaldo
+### Diferencias en el respaldo de los puntos de operación
 
-Esto es lo más importante de toda la guía, y por eso el menú lo repite en
-color en cada pantalla:
+Los tres puntos de operación no tienen el mismo nivel de respaldo. Por esta razón, el menú identifica su procedencia y condición en cada pantalla:
 
-| Punto | De dónde sale | Qué respaldo tiene |
+| Punto | Fuente | Respaldo |
 |---|---|---|
-| **Punta nocturna** | caso de flujo de carga de PowerFactory | **MEDIDO** y contrastado contra PowerFactory |
-| **Diurno** | se deriva de la punta con factores horarios de XM | **DERIVADO**; hereda la validación de la red, no la del punto |
-| **Una fecha** | despacho `dDEC` y pronóstico `PRON_BARRA` de XM | **CONSTRUIDO** desde cero; hereda la validación de la red, no la del punto |
+| **Punta nocturna** | Caso de flujo de carga de PowerFactory | **MEDIDO** y contrastado contra PowerFactory. |
+| **Diurno** | Se deriva de la punta mediante factores horarios de XM. | **DERIVADO**. Hereda la validación de la red, pero no cuenta con una validación independiente del punto de operación. |
+| **Una fecha concreta** | Despacho `dDEC` y pronóstico `PRON_BARRA` de XM. | **CONSTRUIDO** a partir de los datos disponibles para la fecha. Hereda la validación de la red, pero no la del punto de operación. |
 
-Que los tres pasen por el mismo código no los pone al mismo nivel de
-evidencia. Un resultado sobre el diurno o sobre una fecha es tan bueno como el
-despacho del que parte.
+Aunque los tres escenarios se procesan mediante el mismo código, su respaldo documental es diferente. Por tanto, los resultados obtenidos para el escenario diurno o para una fecha específica también dependen de la calidad y representatividad de los datos de despacho utilizados.
 
-### Opción 1 — punta nocturna
+### Opción 1 — Punta nocturna
 
-No pregunta nada más. Es el caso de referencia: 18-22 h, sin sol, máxima
-demanda.
+No requiere información adicional. Corresponde al caso de referencia entre las 18:00 y las 22:00, sin generación solar y con demanda máxima.
 
-### Opción 2 — diurno
+### Opción 2 — Diurno
 
-Pregunta la hora:
+Solicita seleccionar el intervalo horario:
 
-```
+```text
 Que hora:
   * 1) 10:00-11:00 (maxima penetracion solar)
     2) 13:00-14:00
 ```
 
-La primera es la de **máxima penetración solar**, que es el peor caso para la
-inercia. La clave horaria que usa XM (`HourNN`) es 11 y 13 respectivamente.
+El primer intervalo corresponde al escenario de **máxima penetración solar** y, por tanto, al de menor inercia síncrona dentro de los escenarios diurnos considerados. Las claves horarias utilizadas por XM (`HourNN`) son 11 y 13, respectivamente.
 
-### Opción 3 — una fecha concreta
+### Opción 3 — Una fecha concreta
 
-Lista las fechas que ya están en disco y, **en la última línea**, la entrada
-para traer una nueva:
+El menú muestra las fechas disponibles en el directorio de datos. La última entrada permite descargar una fecha adicional desde XM:
 
-```
+```text
 Fechas en disco:
    1) 2026-09-16
    2) 2026-10-20
@@ -87,93 +79,61 @@ Fechas en disco:
    5) otra fecha  ---  descargarla de XM ahora
 ```
 
-Eligiendo la última se escribe la fecha en formato `AAAA-MM-DD` (por defecto,
-mañana) y el modelo se trae del portal público de XM los dos ficheros que de
-verdad son de ese día: el **despacho programado** (`dDEC`) y el **pronóstico de
-demanda por barra** (`PRON_BARRA`). Pesan unos 150 kB entre los dos y es lo
-único para lo que hace falta internet.
+Al seleccionar la última entrada, se solicita una fecha en formato `AAAA-MM-DD` (por defecto, el día siguiente). El modelo descarga del portal público de XM los dos archivos correspondientes a esa fecha: el **despacho programado** (`dDEC`) y el **pronóstico de demanda por barra** (`PRON_BARRA`). Ambos archivos ocupan aproximadamente 150 kB en conjunto. Estos son los únicos datos que requieren conexión a internet durante este proceso.
 
-> **Qué NO se descarga.** El directorio de PARATEC —qué subestación, qué
-> línea, qué unidad— se hereda del snapshot más reciente que ya esté en disco,
-> porque **PARATEC no tiene histórico**: su API devuelve siempre el registro de
-> hoy, se le pida la fecha que se le pida. El `manifest.json` deja escrito de
-> cuál se heredó. Si un recurso del despacho no estuviera en ese directorio no
-> se colaría en silencio: bajaría la cobertura, que es justo lo que el menú
-> enseña a continuación.
+> **Información que no se descarga:** el directorio de PARATEC —que contiene la información de subestaciones, líneas y unidades— se toma del snapshot más reciente disponible en disco. Esto se debe a que **PARATEC no dispone de información histórica**: su API devuelve el registro vigente, independientemente de la fecha solicitada. El archivo `manifest.json` registra el snapshot utilizado como referencia.
 
-XM publica el despacho de un día la tarde anterior, así que **la fecha más
-nueva que se puede pedir es mañana**. Si la fecha ya estaba en disco, el menú
-no vuelve a bajarla: la selecciona y lo dice.
+XM publica el despacho de un día durante la tarde anterior. Por esta razón, la fecha más reciente que se puede solicitar es el día siguiente a la fecha de publicación. Si la fecha seleccionada ya está disponible en disco, el menú utiliza los archivos existentes y no realiza una nueva descarga.
 
-Después se pide el **periodo horario**: el índice 1-24 que usa XM en sus
-ficheros. Por defecto el 19, que es el de la punta nocturna.
+A continuación, se solicita el **periodo horario**, mediante un índice entre 1 y 24 que corresponde a las horas del día en los archivos de XM. El periodo predeterminado es el 19, correspondiente a la punta nocturna.
 
-### El aviso de calidad
+### Verificación de la cobertura de los datos
 
-Elegida una fecha, el menú **construye ese punto y enseña su cobertura** antes
-de dejar seguir:
+Una vez seleccionada la fecha, el menú construye el punto de operación y muestra los porcentajes de cobertura antes de continuar:
 
-```
+```text
 generacion ubicada:  99.92 %   demanda ubicada:  99.02 %
 cobertura suficiente para estudios de frecuencia
 ```
 
-(Las cifras son un ejemplo real del 2026-11-01; cada fecha da las suyas.)
+Las cifras anteriores corresponden a un ejemplo real del 2026-11-01. Los porcentajes se calculan nuevamente para cada fecha.
 
-Si falta demanda por ubicar sale un aviso en rojo. No es cosmético: **el EDAC
-dimensiona sobre la demanda que ve**, así que cortaría de menos y el nadir
-saldría OPTIMISTA. Las fechas anteriores a septiembre de 2026 usan códigos de
-nodo antiguos y rara vez pasan el filtro.
+Si una parte de la demanda no puede ubicarse en la red, el menú muestra una advertencia. Esta condición afecta los resultados: **el EDAC dimensiona el deslastre a partir de la demanda representada en el modelo**. Si parte de la demanda queda sin asignar, el deslastre calculado puede ser insuficiente y el nadir de frecuencia puede resultar optimista. Las fechas anteriores a septiembre de 2026 utilizan códigos de nodo antiguos y, por lo general, no cumplen el filtro de cobertura.
 
 ---
 
-## 2. Cómo se navega el menú
+## 2. Navegación por el menú
 
-| Tecla | Qué hace |
+| Tecla | Función |
 |---|---|
-| `1`…`18` | abre esa opción |
-| `p` | cambia el punto de operación sin salir |
-| `q` | sale |
-| Enter a secas | no hace nada (no cierra la sesión) |
+| `1`…`18` | Abre la opción correspondiente. |
+| `p` | Permite cambiar el punto de operación sin cerrar el menú. |
+| `q` | Cierra el menú. |
+| Enter | No ejecuta ninguna opción en la pantalla principal. |
 
-Tres costumbres del menú que conviene conocer:
+### Comportamiento general
 
-- **Cada opción se explica antes de lanzarse.** Lo que lees arriba del todo no
-  es decoración: dice qué hace, qué supone y cuánto tarda.
-- **Enter acepta el valor por defecto** en todas las preguntas. Una sesión
-  entera a base de Enter es un recorrido válido. Dónde se ve ese defecto
-  depende del tipo de pregunta: en las listas cortas de opciones va marcado con
-  `*`, y en todo lo demás —incluidas **las listas numeradas de fechas y de
-  elementos**, que no llevan `*`— va entre corchetes al final de la línea,
-  `[3000.0]`.
-- **Las opciones que lanzan un módulo aparte enseñan la orden que construyen**
-  antes de ejecutarla:
+- **Cada opción presenta una descripción antes de ejecutarse.** El menú informa qué procedimiento realiza, qué supuestos utiliza y cuál es su tiempo de ejecución aproximado, entre otros aspectos relevantes.
+- **Enter acepta el valor predeterminado** en las preguntas de cada opción. Por tanto, es posible recorrer las opciones utilizando los valores predeterminados. En las listas cortas de opciones, el valor predeterminado se identifica con un asterisco (`*`). En los demás tipos de preguntas —incluidas las listas numeradas de fechas y elementos— se muestra entre corchetes al final de la línea, por ejemplo, `[3000.0]`.
+- **Las opciones que ejecutan módulos independientes muestran el comando correspondiente** antes de iniciar el proceso. Por ejemplo:
 
-  ```
-  $ python -m stn.contingencias --fecha 2026-10-20 --periodo 19
+  ```bash
+  python -m stn.contingencias --fecha 2026-10-20 --periodo 19
   ```
 
-  Está ahí a propósito: así se ve qué banderas se emiten, se puede repetir la
-  ejecución fuera del menú y se puede pegar en un cuaderno de trabajo. Son las
-  ocho de **Simular** y la 18. Las de **Consultar** y las tres primeras de
-  **Análisis** corren dentro del propio menú y no imprimen ninguna orden,
-  porque no hay otra que imprimir.
+  Esto permite identificar los parámetros utilizados, repetir la ejecución desde la línea de comandos o incorporar el comando en un cuaderno de trabajo. Este comportamiento corresponde a las ocho opciones de **Simular** y a la opción 18. Las opciones de **Consultar** y las opciones 15, 16 y 17 de **Análisis** se ejecutan dentro del propio menú y no muestran un comando independiente.
 
-### Dónde quedan las salidas
+### Ubicación de los resultados
 
-En `resultados/`, con **un sufijo por punto de operación** (`_diurno11`,
-`_20261020p19`) para que una ejecución no pise a la otra. La punta no lleva
-sufijo.
+Los archivos de salida se guardan en el directorio `resultados/`. El nombre de los archivos incluye un sufijo asociado al punto de operación —por ejemplo, `_diurno11` o `_20261020p19`— para evitar que una ejecución sobrescriba los resultados de otra. Los archivos correspondientes a la punta nocturna no incluyen sufijo.
 
-### Por qué la primera consulta tarda
+### Tiempo de la primera consulta
 
-El caso base tarda unos 20 segundos en construirse y resolverse. El menú lo
-construye **una vez por sesión** y lo reutiliza, así que a partir de la segunda
-vez las consultas son inmediatas. Al cambiar de punto con `p`, ese caché se
-descarta: sería enseñar consultas de un sistema y simulaciones de otro.
+La construcción y resolución del caso base tarda aproximadamente 20 segundos. El menú realiza este proceso **una sola vez por sesión** y reutiliza el caso resuelto en las consultas posteriores. Por ello, después de la primera consulta, las opciones que utilizan este caso responden de forma prácticamente inmediata.
 
-Las simulaciones largas se lanzan en un proceso aparte, porque modifican la red
-y no conviene que contaminen el caso cacheado.
+Al cambiar el punto de operación mediante `p`, el caso almacenado en caché se descarta y se construye uno nuevo. De esta manera, se evita presentar consultas asociadas a un sistema y ejecutar simulaciones sobre otro.
+
+Las simulaciones de mayor duración se ejecutan en un proceso independiente, ya que modifican el estado de la red. Esta separación evita que dichas modificaciones afecten el caso base almacenado en caché por el menú.
 
 ---
 
@@ -181,32 +141,19 @@ y no conviene que contaminen el caso cacheado.
 
 ### Opción 1 — Caso base y flujo de carga
 
-Reconstruye la red desde los datos, resuelve el **flujo AC de Newton-Raphson**
-y muestra el balance por área, la reconciliación de la demanda y los totales.
-Genera además el mapa y los ficheros de exportación.
+Reconstruye la red a partir de los datos disponibles, resuelve el **flujo de carga AC mediante el método de Newton-Raphson** y presenta el balance por área, la reconciliación de la demanda y los totales del sistema. También genera el mapa de la red y los archivos de exportación.
 
-**No pregunta nada.** Tarda alrededor de un minuto. Es el punto de partida de
-todo lo demás: si esto no sale, nada de lo que sigue tiene sentido.
+Esta opción no requiere parámetros adicionales y tarda aproximadamente un minuto. Constituye el punto de partida de los demás análisis; por tanto, si la construcción o la solución del caso base falla, los resultados de las opciones que dependen de él no serán confiables.
 
 ---
 
 ### Opción 2 — Simular contingencias
 
-Saca elementos de servicio y comprueba tres cosas: que el flujo **siga
-convergiendo**, que nadie quede **sobrecargado** sobre su límite de emergencia,
-y que ninguna **tensión** se salga de 0,9-1,1 pu.
+Retira elementos de servicio de forma individual o combinada y evalúa el comportamiento de la red ante cada contingencia. Comprueba tres condiciones principales: que el flujo de carga **converja**, que ningún elemento supere su **límite de emergencia** y que las tensiones de las barras permanezcan dentro del intervalo de 0,9 a 1,1 pu.
 
-> **Cómo se cuentan las violaciones, que no es igual para las dos.** Las
-> **tensiones** fuera de banda son incrementales: se restan las del caso base,
-> así que `n_v_bajas` y `n_v_altas` son sólo las que *añade* la contingencia.
-> El radial de Arauca ya tiene 4 barras bajo 0,9 pu sin que pase nada, y
-> contarlas en los 296 casos sería contar 296 veces el mismo problema.
-> Las **sobrecargas** no: `n_sobrecargas` cuenta todos los elementos por encima
-> de su límite tras la contingencia, incluidos los que ya lo estuvieran antes.
+**Primera pregunta — tipo de simulación:**
 
-**Primera pregunta — qué simular:**
-
-```
+```text
 Que quieres simular:
   * 1) el barrido completo (lineas y trafos, 296 casos, ~2 min)
     2) solo 500 kV (55 casos, rapido)
@@ -215,156 +162,121 @@ Que quieres simular:
     5) dobles contingencias N-2 en 500 kV
 ```
 
-- **Barrido completo** — cada línea y cada transformador, uno a uno.
-- **Solo 500 kV** — acota al nivel de 500 kV. Es la vía rápida.
-- **Un área concreta** — pide el nombre del área. Valores válidos: `Caribe`,
-  `Antioquia`, `Oriental`, `Nordeste`, `Suroccidental` (por defecto `Caribe`).
-- **Una contingencia concreta** — ver abajo.
-- **N-2 en 500 kV** — todos los pares de elementos de 500 kV.
+Las alternativas disponibles son:
 
-**El selector de elemento (opción 4).** Los nombres del modelo son largos
-(`ANTIOQUIA 500 - CERROMATOSO 500 1`) y nadie se los sabe de memoria, así que
-no te los pide a pelo:
+- **Barrido completo:** evalúa individualmente cada línea y cada transformador.
+- **Solo 500 kV:** limita el análisis a los elementos del nivel de tensión de 500 kV. Reduce el número de casos y el tiempo de ejecución.
+- **Un área concreta:** solicita el nombre del área que se desea analizar. Los valores válidos son `Caribe`, `Antioquia`, `Oriental`, `Nordeste` y `Suroccidental`. El valor predeterminado es `Caribe`.
+- **Una contingencia concreta:** permite seleccionar un elemento específico para evaluar su salida de servicio bajo el criterio N-1. El procedimiento de selección se describe a continuación.
+- **N-2 en 500 kV:** evalúa las combinaciones de dos elementos del sistema de 500 kV.
 
+#### Selección de un elemento para la contingencia N-1
+
+Los nombres de los elementos en el modelo pueden ser extensos, por ejemplo, `ANTIOQUIA 500 - CERROMATOSO 500 1`. Para facilitar su selección, el menú permite filtrar los elementos mediante una búsqueda por nombre.
+
+```text
+Texto para filtrar por nombre (Enter = mostrar los elementos con mayor cargabilidad) []:
 ```
-parte del nombre (Enter = las mas cargadas) []:
-```
 
-- Escribiendo un trozo de texto, lista las coincidencias ordenadas **de más a
-  menos cargada**, hasta 25. Si hay más, lo dice y pide afinar la búsqueda.
-- Pulsando Enter sin escribir nada, lista **las más cargadas del caso base**,
-  que son las contingencias que de verdad interesan.
+- **Al introducir un texto**, el menú muestra los elementos cuyo nombre coincide con el criterio de búsqueda. Las coincidencias se ordenan de mayor a menor cargabilidad y se presentan hasta 25 resultados. Si existen más coincidencias, el menú informa esta condición y solicita precisar el texto de búsqueda.
+- **Al pulsar Enter sin introducir texto**, se muestran los elementos con mayor cargabilidad en el caso base. Esta vista permite identificar los elementos que operan más cerca de sus límites antes de aplicar la contingencia.
 
-Cada línea muestra el tipo, el nombre y su carga como porcentaje de `s_nom`.
-Se elige por número; `0` cancela.
+Cada resultado incluye el tipo de elemento, su nombre y su cargabilidad expresada como porcentaje de `s_nom`. La selección se realiza mediante el número asignado a cada elemento. La opción `0` cancela el proceso.
 
-El resultado de una contingencia concreta termina con un **veredicto en una
-línea**: N-1 limpio, converge pero con sobrecargas o tensiones fuera de banda,
-la red se separa en islas (diciendo cuánta carga y cuánta generación quedan
-fuera), o el flujo no converge.
+Al finalizar la simulación de una contingencia específica, se presenta un **resumen del resultado N-1**. Este indica si la contingencia no genera violaciones, si el flujo converge pero aparecen sobrecargas o tensiones fuera de los límites establecidos, si la red se divide en islas eléctricas —incluyendo la cantidad de carga y generación que queda fuera de servicio— o si el flujo de carga no converge.
 
-**Segunda pregunta — la curva de capacidad:**
+**Segunda pregunta — aplicación de la curva de capacidad:**
 
-```
+```text
 Imponer la curva de capacidad de los generadores (PV->PQ)?
   * 1) no (mas rapido)
     2) si (mas lento, detecta colapsos de tension)
 ```
 
-Esto importa más de lo que parece. **Sin límites, las barras PV sostienen su
-tensión con el reactivo que haga falta y el colapso de tensión es imposible por
-construcción**: el barrido no puede encontrarlo aunque esté ahí. Con límites,
-cada máquina que excede su curva se conmuta a PQ y el caso necesita varios
-flujos en vez de uno.
+La aplicación de los límites de potencia reactiva de los generadores es necesaria para evaluar adecuadamente la estabilidad de tensión. **Si no se imponen estos límites, las barras PV pueden mantener su consigna de tensión sin una restricción efectiva sobre la potencia reactiva que deben suministrar o absorber.** En esas condiciones, el modelo no representa la saturación de la capacidad reactiva de los generadores y, por construcción, no puede identificar el colapso de tensión asociado a dicha limitación.
 
-Con límites, el barrido completo tarda unos 15 minutos (el menú avisa). Una
-sola contingencia son segundos.
+Cuando se aplican los límites, cada generador que alcanza o supera su curva de capacidad puede pasar de PV a PQ. El proceso requiere resolver nuevamente el flujo de carga después de los cambios de tipo de barra, por lo que una contingencia puede necesitar varias soluciones sucesivas.
+
+Con los límites activados, el barrido completo tarda aproximadamente 15 minutos; el menú informa el tiempo estimado antes de iniciar. La evaluación de una sola contingencia tarda unos segundos.
 
 ---
 
 ### Opción 3 — Dinámica de frecuencia (EDAC y AGC)
 
-Simula qué pasa cuando se pierde generación de golpe: integra la **ecuación de
-oscilación**, dispara los escalones del EDAC según el **Acuerdo 2105 del CNO**,
-reparte el deslastre y deja que el AGC absorba el resto. Termina con un flujo
-AC del estado post-evento.
+Simula la respuesta del sistema ante una pérdida súbita de generación. El módulo integra la **ecuación de oscilación**, aplica los escalones del EDAC de acuerdo con el **Acuerdo 2105 del CNO**, calcula el deslastre de carga y representa la respuesta del AGC para compensar el desequilibrio restante. El procedimiento finaliza con un flujo de carga AC del estado posterior al evento.
 
-**Primera pregunta — qué evento:**
+**Primera pregunta — tipo de evento:**
 
-```
+```text
 Que evento simular:
   * 1) perdida de N MW de generacion
     2) perdida de un area completa
     3) perdida de generadores concretos
 ```
 
-| Opción | Qué pide | Por defecto |
+| Alternativa | Información solicitada | Valor predeterminado |
 |---|---|---|
-| N MW | los MW que se pierden | `3000` |
-| un área | el nombre del área | `Antioquia` |
-| generadores concretos | nombres separados por espacio | `gen_ANTIOQUIA__500` |
+| Pérdida de N MW | Magnitud de la generación perdida, en MW. | `3000` |
+| Pérdida de un área | Nombre del área afectada. | `Antioquia` |
+| Pérdida de generadores concretos | Nombres de los generadores, separados por espacios. | `gen_ANTIOQUIA__500` |
 
-Para saber cómo se llama un generador, usa antes la opción 10 (*Buscar una
-barra, generador o línea*).
+Para consultar el nombre exacto de un generador, se puede utilizar previamente la opción 10 (**Buscar una barra, generador o línea**).
 
-**Segunda pregunta — cómo repartir el deslastre:**
+**Segunda pregunta — método de distribución del deslastre:**
 
-```
+```text
 Como repartir el deslastre:
   * 1) edac (proporcional, como el esquema regulado)
     2) optimo (OPF que elige donde cortar)
     3) comparar los dos
 ```
 
-- **edac** — el reparto proporcional del esquema regulado. Es lo que haría el
-  sistema real.
-- **optimo** — un OPF que elige dónde cortar.
-- **comparar** — corre los dos y los pone uno al lado del otro.
+- **EDAC:** utiliza el reparto proporcional establecido por el esquema regulado. Representa la distribución convencional del deslastre.
+- **Óptimo:** utiliza un problema de flujo óptimo de potencia (OPF) para determinar las barras en las que se debe realizar el corte de carga.
+- **Comparar:** ejecuta ambos métodos y presenta sus resultados de forma conjunta.
 
 ---
 
 ### Opción 4 — Comparar dos horas lado a lado
 
-Somete **dos puntos de operación** a las mismas pruebas y los imprime en
-columnas con la variación ya calculada: la red, el balance de potencia, el
-estado de la red resuelta, lo que decide la frecuencia, la respuesta a la misma
-perturbación, la contingencia más grande de cada uno, el balance por área, el
-N-1 y el pool de BTM.
+Compara **dos puntos de operación** mediante las mismas pruebas y presenta los resultados en columnas, junto con las diferencias entre ambos. La comparación incluye la configuración de la red, el balance de potencia, el estado del flujo de carga, la respuesta de frecuencia, la respuesta ante una misma perturbación, la contingencia de mayor magnitud, el balance por área, los resultados N-1 y el conjunto de generación BTM.
 
-La **columna A es siempre el punto activo** de la sesión (el que cambias con
-`p`). Lo único que se pregunta es contra qué compararlo, y las opciones se
-adaptan a lo que tengas elegido:
+La **columna A corresponde siempre al punto de operación activo** en la sesión, es decir, al punto seleccionado o modificado mediante `p`. El menú solicita seleccionar el segundo punto de operación. Las alternativas disponibles dependen del punto activo:
 
-| Punto activo | Opciones que ofrece |
+| Punto activo | Alternativas de comparación |
 |---|---|
-| una fecha de XM | **otro periodo de la misma fecha**, la punta, el diurno, otra fecha |
-| diurno | la punta, el diurno a otra hora, una fecha |
-| punta | el diurno a una hora, una fecha |
+| Una fecha de XM | Otro periodo de la misma fecha, la punta nocturna, el escenario diurno u otra fecha. |
+| Diurno | La punta nocturna, el escenario diurno en otro horario u otra fecha. |
+| Punta nocturna | El escenario diurno en un horario seleccionado o una fecha de XM. |
 
-Con una fecha activa, *otro periodo de la misma fecha* va la primera a
-propósito: es la comparación que más se pide —la hora crítica contra la punta
-de ese día—. El defecto que ofrece depende de dónde estés: **si el periodo
-activo no es el 5, propone el 5**, porque el barrido de las 24 horas sitúa la
-hora crítica en la 4 o la 5 de la madrugada y nunca en la de máxima demanda; y
-**si ya estás en el 5, propone el 19**, que es la punta. Dicho de otro modo:
-pulsando Enter siempre obtienes el otro extremo del día.
+Cuando el punto activo corresponde a una fecha de XM, la alternativa **otro periodo de la misma fecha** aparece en primer lugar. Esto facilita comparar la hora crítica con la hora de máxima demanda del mismo día.
 
-Si las dos columnas acabaran siendo el mismo punto, lo dice y no corre nada.
+El valor predeterminado depende del periodo activo. Si el periodo seleccionado no es el 5, el menú propone el periodo 5, debido a que el barrido de las 24 horas sitúa la hora crítica en el periodo 4 o 5 de la madrugada, y no en el periodo de máxima demanda. Si el periodo activo ya es el 5, propone el periodo 19, correspondiente a la punta nocturna. De esta manera, al aceptar el valor predeterminado se comparan los dos extremos del día considerados por el análisis.
 
-**Después pregunta:**
+Si los dos puntos de operación seleccionados son iguales, el menú informa esta condición y no ejecuta la comparación.
 
-- **La perturbación de referencia en MW** (por defecto `3000`). Es el mismo
-  evento en MW absolutos sobre los dos sistemas: ésa es la comparación que
-  interesa.
-- **El barrido N-1**: leer los CSV ya generados (rápido, el defecto) o
-  correrlo ahora, que tarda varios minutos *por columna*.
+**Parámetros adicionales:**
 
-**Cómo leer la salida.** Los comentarios que acompañan a cada bloque se
-calculan de las dos columnas, no están escritos de antemano. Si una columna
-tiene más demanda y aun así menos energía cinética, lo dice; si el número de
-generadores cambia entre las dos, lo explica (una máquina está en el modelo si
-el despacho la pone a producir esa hora, y ese compromiso de unidades es lo que
-mueve la inercia de una hora a otra). La casilla de *demanda BRUTA* sale en
-blanco en las columnas que vienen de una fecha de XM, porque el `PRON_BARRA`
-publica demanda NETA y el modelo no tiene con qué separar lo embebido.
+- **Perturbación de referencia en MW:** por defecto, `3000` MW. Se aplica el mismo evento, expresado en MW absolutos, a los dos sistemas. Esto permite comparar la respuesta ante una perturbación de igual magnitud.
+- **Barrido N-1:** permite utilizar los archivos CSV generados previamente —opción más rápida y predeterminada— o ejecutar nuevamente el análisis. La segunda alternativa tarda varios minutos por cada punto de operación.
+
+#### Interpretación de la salida
+
+Los comentarios que acompañan cada bloque se generan a partir de los resultados de las dos columnas. Por ejemplo, el menú identifica si un punto presenta una demanda mayor y, al mismo tiempo, una energía cinética menor. También explica las diferencias en el número de generadores en servicio: una unidad se incluye en el modelo cuando el despacho la establece como generadora durante el periodo analizado, y el compromiso de unidades influye directamente en la inercia del sistema.
+
+La casilla de **demanda bruta** aparece vacía en las columnas construidas a partir de fechas de XM. Esto se debe a que `PRON_BARRA` contiene la demanda neta y el modelo no dispone de información suficiente para separar la componente de generación embebida.
 
 ---
 
-### Opción 5 — Deslastre con BTM *[la contribución]*
+### Opción 5 — Deslastre considerando generación BTM
 
-El algoritmo central del trabajo. Reparte generación detrás del contador por
-las barras, desconecta de golpe la parte conectada por inversor, y resuelve un
-**MILP** que asigna barras a los escalones del EDAC teniendo en cuenta cuánta
-generación embebida **sana** se llevaría por delante cada corte.
+Esta opción implementa el algoritmo principal del trabajo. Distribuye la generación detrás del medidor (*behind-the-meter*, BTM) entre las barras, representa la desconexión súbita de la fracción conectada mediante inversores y resuelve un **modelo de programación lineal entera mixta (MILP)**. El modelo asigna las barras a los escalones del EDAC considerando cuánta generación BTM sana se perdería junto con la carga desconectada.
 
-> **Aviso en la punta.** Si el punto activo es la punta nocturna, el menú avisa
-> de que la solar da CERO y el evento que estudia este módulo **no puede
-> ocurrir**: el BTM que cae será sólo el no solar. Para verlo de verdad, cambia
-> el punto con `p` a diurno o a una fecha con sol.
+> **Consideración para la punta nocturna:** cuando el punto de operación activo es la punta nocturna, la generación solar es nula. En consecuencia, el evento de desconexión de generación solar no está presente en este escenario y la pérdida de BTM corresponde únicamente a la componente no solar. Para analizar una desconexión asociada a generación solar, se debe seleccionar el escenario diurno o una fecha de XM con generación solar.
 
-**Pregunta 1 — de dónde sale el BTM:**
+**Pregunta 1 — fuente de información del BTM:**
 
-```
+```text
 De donde sale el BTM:
   * 1) agpe (CASO BASE: el BTM real de hoy, 740,8 MW segun UPME)
     2) agpe_gd (sensibilidad: + generacion distribuida, 1.346,8 MW)
@@ -373,51 +285,42 @@ De donde sale el BTM:
        cifras previas al 31-10-2026)
 ```
 
-La cuarta está ahí sólo para reproducir cifras antiguas: **las plantas menores
-no son BTM**, porque la CREG 086 de 1996 las declara excluyentes con la figura
-de autogenerador.
+La cuarta alternativa se conserva para reproducir resultados de versiones anteriores del modelo. **Las plantas menores no se clasifican como generación BTM**, ya que la CREG 086 de 1996 establece que esta figura es excluyente con la de autogenerador.
 
-**Pregunta 2 — sólo si elegiste `sintetico`:** la penetración supuesta en % de
-la demanda (por defecto `20`).
+**Pregunta 2 — únicamente para la alternativa `sintetico`:** solicita la penetración supuesta como porcentaje de la demanda. El valor predeterminado es `20`.
 
-**Pregunta 3 —** el % del BTM con inversor que se desconecta (por defecto
-`80`). Es la profundidad del evento.
+**Pregunta 3 — fracción de BTM con inversor que se desconecta:** se introduce como porcentaje. El valor predeterminado es `80`. Este parámetro representa la magnitud de la desconexión considerada en el evento.
 
-**Pregunta 4 —** pérdida convencional adicional en MW (por defecto `0`, que
-significa ninguna). Sirve para superponer la caída del BTM a una pérdida de
-generación síncrona.
+**Pregunta 4 — pérdida convencional adicional:** permite añadir una pérdida de generación convencional, expresada en MW. El valor predeterminado es `0`, que corresponde a no incluir una pérdida adicional. Esta opción permite evaluar conjuntamente la desconexión del BTM y una pérdida de generación síncrona.
 
-**Pregunta 5 — con qué vara exigir la suficiencia del deslastre:**
+**Pregunta 5 — criterio para evaluar la suficiencia del deslastre:**
 
-```
+```text
 Con que vara exigir la suficiencia del deslastre:
   * 1) peor_escenario (robustez de peor caso, recomendada)
     2) estimado (se fia de la estimacion)
     3) piso (garantia literal de Das, sobrecorta)
 ```
 
-Esta pregunta es sobre **qué hacer con el error de estimación del BTM**:
-`peor_escenario` se protege contra él, `estimado` se fía de la estimación, y
-`piso` aplica la garantía literal de Das, que sobrecorta.
+Esta selección define **cómo se incorpora el error de estimación del BTM** en el cálculo:
 
-**Pregunta 6 —** el peso **lambda** de la penalización por destruir BTM sano
-(por defecto `5`). Antes de moverlo, mira la opción 17.
+- `peor_escenario` considera un criterio robusto frente al error de estimación.
+- `estimado` utiliza directamente el valor estimado del BTM.
+- `piso` aplica la garantía literal de Das, lo que puede producir un deslastre superior al estrictamente necesario.
 
-**Pregunta 7 —** si comparar contra el reparto proporcional del EDAC actual
-(por defecto, sí). Es lo que convierte la ejecución en un resultado publicable:
-sin la comparación sólo tienes una cifra sin referencia.
+**Pregunta 6 — peso `lambda`:** define el peso de la penalización asociada a la desconexión de generación BTM que permanece en servicio. El valor predeterminado es `5`. Antes de modificarlo, se recomienda consultar la opción 17, que analiza su sensibilidad.
+
+**Pregunta 7 — comparación con el EDAC proporcional:** permite comparar el resultado del MILP con el reparto proporcional del EDAC actual. La opción está activada por defecto. Esta comparación proporciona una referencia para evaluar el desempeño del método propuesto.
 
 ---
 
-### Opción 6 — Cascada multironda
+### Opción 6 — Cascada multirronda
 
-A diferencia del N-1, **no supone que el sistema aguanta el primer golpe**:
-encadena aperturas, deslastre y disparos de protección en una sola línea de
-tiempo, ronda tras ronda, hasta que el sistema se estabiliza o colapsa.
+A diferencia de un análisis N-1 convencional, esta opción no se limita a evaluar la respuesta del sistema ante una contingencia aislada. Representa una **secuencia de eventos y acciones de protección**, que incluye aperturas de elementos, deslastre de carga y disparos sucesivos. El proceso se desarrolla ronda tras ronda, hasta que el sistema se estabiliza o alcanza una condición de colapso.
 
-**Pregunta 1 — qué escenario:**
+**Pregunta 1 — escenario de simulación:**
 
-```
+```text
 Que escenario:
   * 1) btm (cae el BTM con inversor)
     2) iberia (secuencia tipo apagon iberico)
@@ -426,273 +329,207 @@ Que escenario:
     5) abrir las N lineas mas cargadas
 ```
 
-**Preguntas que dependen del escenario:**
+**Parámetros que dependen del escenario:**
 
-| Escenario | Pregunta | Por defecto |
+| Escenario | Parámetro solicitado | Valor predeterminado |
 |---|---|---|
-| `btm` | fracción del BTM que cae | `0.9` |
-| `iberia`, **sólo en la punta** | solar EN PRODUCCIÓN en MW | `0.0` |
-| `abrir las N` | cuántas líneas | `6` |
+| `btm` | Fracción del BTM que se desconecta. | `0.9` |
+| `iberia`, únicamente en la punta nocturna | Generación solar en producción, en MW. | `0.0` |
+| `abrir las N` | Número de líneas que se deben abrir. | `6` |
 
-La solar sólo se pregunta en la punta, y es deliberado: en el diurno y en una
-fecha **el punto de operación ya sabe cuánta hay** —medida del despacho, en el
-caso de la fecha—, así que preguntarla sería dar a elegir entre un dato y una
-suposición. Si la respondes sobre la punta nocturna, el menú avisa de que esa
-solar es una hipótesis, no un dato.
+La generación solar únicamente se solicita cuando el punto activo es la punta nocturna. En el escenario diurno y en las fechas de XM, el punto de operación ya contiene la generación solar correspondiente —en el caso de una fecha, según el despacho—. Por tanto, solicitar nuevamente este parámetro implicaría reemplazar un dato disponible por una hipótesis adicional.
+
+Cuando se utiliza la punta nocturna, el menú advierte que cualquier valor de generación solar introducido corresponde a un supuesto y no a un dato del punto de operación.
 
 ---
 
 ### Opción 7 — Barrido de las 24 horas de una fecha
 
-Somete las 24 horas de una fecha a **las mismas pruebas y al mismo evento en MW
-absolutos**, y deja la tabla en un CSV. Es lo que convierte «cuál es la hora
-crítica» de una elección en una medida: sale la 4 o la 5 de la madrugada, y
-nunca la de máxima demanda.
+Evalúa las 24 horas de una fecha mediante **las mismas pruebas y una perturbación de igual magnitud en MW absolutos**. Los resultados se almacenan en un archivo CSV. Este análisis permite identificar cuantitativamente la hora crítica del día; en los casos evaluados, esta se encuentra en el periodo 4 o 5 de la madrugada y no coincide con el periodo de demanda máxima.
 
-Esta opción **no sigue al punto de operación**, y con razón: un barrido horario
-sólo tiene sentido sobre una fecha de XM, porque la punta y el diurno son UNA
-hora cada uno, no un día. Si el punto activo es una fecha, la propone la
-primera; si no, pide una.
+Esta opción requiere una fecha de XM y, por tanto, **no utiliza directamente el punto de operación activo**. La punta nocturna y el escenario diurno representan intervalos horarios específicos, no un día completo. Si el punto activo corresponde a una fecha de XM, el menú la propone automáticamente; en caso contrario, solicita seleccionar una fecha.
 
-Las fechas se listan **de la más reciente a la más antigua**, porque el
-catálogo de nodos se curó a finales de octubre de 2026 y las fechas anteriores
-a septiembre rara vez pasan el filtro de cobertura (el barrido excluye sus
-horas del resumen).
+Las fechas se presentan **de la más reciente a la más antigua**. El catálogo de nodos se actualizó a finales de octubre de 2026 y las fechas anteriores a septiembre de ese año suelen presentar limitaciones de cobertura. Las horas que no cumplen el filtro de cobertura se excluyen del resumen del barrido.
 
-**Preguntas:**
+**Parámetros solicitados:**
 
-| Pregunta | Por defecto |
+| Parámetro | Valor predeterminado |
 |---|---|
-| cuál (número de la lista) | `1` |
-| barrer más fechas para comparar (sólo si hay más de una en disco) | `no, solo esa` |
-| evento de generación perdida en MW | `3000` |
-| gráfico de las 24 horas | `si` |
+| Fecha que se analizará (número de la lista). | `1` |
+| Incluir otras fechas en la comparación (solo si hay más de una fecha disponible). | `no, solo esa` |
+| Magnitud de la pérdida de generación, en MW. | `3000` |
+| Generar el gráfico de las 24 horas. | `si` |
 
-Con varias fechas las compara al final, que es la única forma de distinguir una
-propiedad del sistema de una casualidad del día. Unos **3 minutos por fecha**.
+Cuando se seleccionan varias fechas, el menú presenta una comparación al finalizar. Esto permite distinguir comportamientos asociados a las características del sistema de aquellos que dependen de las condiciones particulares de una fecha. El tiempo de ejecución es de aproximadamente **3 minutos por fecha**.
 
 ---
 
 ### Opción 8 — Mapa interactivo
 
-Genera un HTML con la red georreferenciada: líneas coloreadas por cargabilidad,
-barras por tensión y los autotransformadores marcados. **No pregunta nada.**
+Genera un archivo HTML con la representación georreferenciada de la red. Las líneas se colorean de acuerdo con su cargabilidad, las barras se identifican según su nivel de tensión y los autotransformadores se muestran en el mapa. Esta opción no requiere parámetros adicionales.
 
-El trazado es el mismo en todas las fechas; lo que cambia son los flujos y los
-colores. Lo que el punto deje fuera de servicio **sale a trazos, no
-desaparece**, para que dos fechas se puedan comparar de un vistazo sin
-preguntarse si una línea falta o nunca estuvo.
+La geometría y el trazado de la red se mantienen constantes entre fechas; los flujos y los colores cambian de acuerdo con el punto de operación. Los elementos que se encuentran fuera de servicio se representan mediante líneas discontinuas en lugar de eliminarse del mapa. Esto permite comparar diferentes fechas y distinguir los elementos desconectados de aquellos que no forman parte de la red modelada.
 
 ---
 
 ## 4. Consultar el modelo
 
-Estas seis opciones leen el caso cacheado: **no preguntan casi nada y
-responden al instante** a partir de la segunda vez.
+Las seis opciones de esta sección consultan el caso base almacenado en caché. Por lo general, no requieren parámetros adicionales y, una vez construido el caso base, presentan los resultados prácticamente de inmediato.
 
 ### Opción 9 — Resumen del sistema
 
-Las cifras de una ojeada, en cinco bloques:
+Presenta las principales características del sistema en cinco bloques:
 
-- **RED** — buses, líneas, trafos, generadores y cargas.
-- **POTENCIA** — consignas, demanda, pérdidas, y cuántos MW pone el slack para
-  cerrar el balance.
-- **TENSIÓN** — rango en pu y cuántas barras están bajas o altas.
-- **FRECUENCIA** — inercia equivalente *H*, capacidad acoplada *S_base*,
-  energía cinética *H·S*, estatismo equivalente y reserva.
-- **MEZCLA POR TECNOLOGÍA** — MW de placa por tecnología, indicando **cuántas
-  máquinas de cada una tienen H declarado** y cuántas usan el valor por
-  defecto.
+- **RED:** número de barras, líneas, transformadores, generadores y cargas.
+- **POTENCIA:** consignas de generación, demanda, pérdidas y potencia activa suministrada por la barra slack para cerrar el balance.
+- **TENSIÓN:** rango de tensiones en pu y número de barras con tensiones por debajo o por encima de los límites establecidos.
+- **FRECUENCIA:** inercia equivalente `H`, capacidad de generación acoplada `S_base`, energía cinética `H·S`, estatismo equivalente y reserva.
+- **MEZCLA POR TECNOLOGÍA:** potencia nominal instalada por tecnología. También indica cuántas máquinas tienen un valor de inercia `H` declarado y cuántas utilizan el valor predeterminado.
 
-Ese último paréntesis es el que no hay que saltarse: dice cuánto de la inercia
-es dato y cuánto es supuesto.
+La información sobre los valores de inercia permite distinguir qué parte de los datos corresponde a parámetros declarados y qué parte depende de supuestos del modelo.
 
 ### Opción 10 — Buscar una barra, generador o línea
 
-Única pregunta: el texto a buscar. Busca por texto libre, sin distinguir
-mayúsculas, y muestra lo que el modelo sabe de lo que encuentre:
+Solicita un texto de búsqueda. La búsqueda no distingue entre mayúsculas y minúsculas y muestra la información disponible en el modelo para los elementos que coinciden con el criterio introducido:
 
-- **Barras** — tensión, generación, carga y **todas las líneas conectadas** con
-  su flujo visto desde esa barra y su cargabilidad.
-- **Generadores** — potencia despachada, tecnología, placa en MVA e inercia,
-  diciendo si la H es real o por tecnología.
-- **Líneas** — flujo y `s_nom`, hasta 25. Ojo: este bloque **sólo sale si la
-  búsqueda no casó con ninguna barra**. Buscando por el nombre de una
-  subestación verás sus líneas en el bloque de barras, que es más completo;
-  para listar líneas sueltas, busca por algo que no sea nombre de barra.
+- **Barras:** tensión, generación, carga y todas las líneas conectadas. Para cada línea se muestra el flujo desde la perspectiva de la barra consultada y su cargabilidad.
+- **Generadores:** potencia despachada, tecnología, potencia nominal en MVA e inercia. También se indica si el valor de `H` corresponde a un dato declarado o a un valor asignado por tecnología.
+- **Líneas:** flujo de potencia y `s_nom`, con un máximo de 25 resultados. Este bloque se muestra únicamente cuando la búsqueda no coincide con ninguna barra. Si se busca por el nombre de una subestación, sus líneas aparecen en el bloque de barras, que incluye información adicional sobre las conexiones. Para consultar líneas individuales, se recomienda utilizar un término de búsqueda que no coincida con el nombre de una barra.
 
-Es la vía para averiguar el nombre exacto de un generador antes de usarlo en la
-opción 3.
+Esta opción permite consultar el nombre exacto de un generador antes de seleccionarlo en la opción 3.
 
 ### Opción 11 — Cobertura de datos: qué es dato y qué es supuesto
 
-Dos listas. La primera cuenta **cuántas máquinas tienen declarado** cada
-parámetro frente al total: inercia H (y qué porcentaje de la placa cubren),
-estatismo, Q_min/Q_max, tecnología, y cuántas líneas son contrastables contra
-PowerFactory.
+Presenta dos listas para identificar el nivel de información disponible y los parámetros que dependen de hipótesis.
 
-La segunda lista **lo que sigue siendo literatura o supuesto propio**, con su
-valor: el amortiguamiento de carga, la constante del gobernador, la reserva
-primaria, el factor de potencia nominal, el límite de subexcitación, la caída
-síncrona, la correlación espacial del BTM y las impedancias genéricas de los 16
-autotransformadores.
+La primera muestra **cuántas máquinas tienen declarado cada parámetro** con respecto al total del modelo. Incluye la inercia `H` —junto con el porcentaje de potencia nominal que cubren esos datos—, el estatismo, los límites `Q_min` y `Q_max`, la tecnología y el número de líneas que pueden contrastarse con PowerFactory.
 
-Si vas a defender un resultado, ésta es la pantalla que te dice por dónde te
-pueden preguntar.
+La segunda lista identifica los **parámetros que provienen de la literatura o de supuestos adoptados en el estudio**, junto con sus valores. Incluye el amortiguamiento de carga, la constante del gobernador, la reserva primaria, el factor de potencia nominal, el límite de subexcitación, la caída síncrona, la correlación espacial del BTM y las impedancias genéricas de los 16 autotransformadores.
+
+Esta consulta permite identificar qué parámetros cuentan con respaldo en los datos de entrada y cuáles requieren justificación como hipótesis durante la presentación o discusión de los resultados.
 
 ### Opción 12 — Qué información falta
 
-La contabilidad de la **energía que el modelo no ve**: la generación total del
-reporte, los nodos sin camino trazable al STN, lo que el modelo informa y los
-MW ocultos por el filtro. Lista los mayores nodos sin atribuir y termina con
-**qué pedir, por orden de retorno**.
+Presenta la información de generación que no queda representada explícitamente en el modelo. Incluye la generación total reportada, los nodos que no tienen una conexión trazable al STN, los valores que informa el modelo y los MW que quedan excluidos por el filtro aplicado.
+
+La opción identifica los nodos con mayor generación no atribuida y finaliza con una lista priorizada de la información que sería conveniente solicitar para mejorar la representación del sistema.
 
 ### Opción 13 — El BTM colombiano
 
-Composición del BTM registrado por tecnología y por área. El BTM real son los
-**AGPE, 740,83 MW según la UPME**, de los que el **96,9 % es solar** —y la
-solar es lo único que se desconecta en bloque ante un hueco de tensión—. La
-forma por subárea y tecnología sale de PARATEC; el total, de la UPME.
+Presenta la composición del BTM registrado en Colombia por tecnología y área. Para el caso base, el BTM corresponde a los **AGPE, con una capacidad de 740,83 MW según la UPME**. De este total, el **96,9 % corresponde a generación solar**. En la representación utilizada por el modelo, esta es la componente que se desconecta en bloque ante un hueco de tensión.
 
-La tabla por área ordena por porcentaje de inversor, que en tres de las cinco
-áreas es el 100 %.
+La distribución por subárea y tecnología se obtiene de PARATEC, mientras que la capacidad total corresponde a la información de la UPME.
 
-Termina con tres cifras que conviene leer juntas: la penetración con inversor
-sobre la demanda del modelo, la misma cifra añadiendo generación distribuida
-(que es una sensibilidad, no el caso base) y el umbral a partir del cual el
-EDAC actúa, con su horquilla. Si la primera supera al tercero, el sistema está
-por encima del umbral.
+La tabla por área se ordena según el porcentaje de generación conectada mediante inversores. En tres de las cinco áreas, este porcentaje es del 100 %.
 
-Incluye un aviso explícito: **las plantas menores no son BTM** (CREG 086 de
-1996), y hasta el 31-10-2026 este panel las sumaba.
+La opción finaliza con tres indicadores que deben interpretarse conjuntamente:
+
+1. La penetración de generación conectada mediante inversores con respecto a la demanda del modelo.
+2. La misma penetración al incluir la generación distribuida, considerada como un escenario de sensibilidad y no como el caso base.
+3. El umbral de penetración a partir del cual actúa el EDAC, junto con su intervalo de incertidumbre.
+
+Si el primer indicador supera el umbral indicado en el tercero, el punto de operación se encuentra por encima de dicho umbral.
+
+La opción también incluye una advertencia sobre la clasificación de las plantas menores: **no se consideran generación BTM**, de acuerdo con la interpretación de la CREG 086 de 1996. Hasta el 31-10-2026, este panel incluía dichas plantas en el cálculo.
 
 ### Opción 14 — Balance por área operativa
 
-Generación, demanda, pérdidas e intercambio de cada una de las cinco áreas.
-`InterP` positivo significa que el área exporta.
+Presenta la generación, demanda, pérdidas e intercambio de cada una de las cinco áreas operativas. Un valor positivo de `InterP` indica que el área exporta potencia.
 
-Debajo, un contraste con los **límites de importación que publica XM** en sus
-informes de planeamiento operativo, con qué fija cada límite. No están en
-PARATEC, y varios los fija la **estabilidad** y no el límite térmico, así que
-el N-1 de este modelo —que sólo mira térmico y tensión— no los detecta por su
-cuenta.
+A continuación, compara los resultados con los **límites de importación publicados por XM** en sus informes de planeamiento operativo e identifica el criterio que establece cada límite. Estos valores no se encuentran en PARATEC. Además, varios límites están determinados por condiciones de estabilidad y no por restricciones térmicas. Por esta razón, el análisis N-1 del modelo —que evalúa límites térmicos y de tensión— no identifica necesariamente las restricciones de transferencia asociadas a estabilidad.
 
-> Ojo al interpretarlo: el caso de PowerFactory del que parte el modelo declara
-> una red futura, mientras que esos límites son de 2024. Una red reforzada
-> admite más transferencia, así que exceder uno **no prueba** que el caso sea
-> irrealizable.
+> **Consideración para la interpretación:** el caso de PowerFactory utilizado como referencia representa una red futura, mientras que los límites de importación incluidos en la comparación corresponden a 2024. Una red con refuerzos puede admitir mayores transferencias; por tanto, superar uno de esos límites no demuestra, por sí solo, que el caso modelado sea irrealizable.
 
 ---
 
 ## 5. Análisis
 
-Estas cuatro reproducen los resultados del trabajo. Son las más lentas y las
-que más conviene leer con el texto que las acompaña.
+Las cuatro opciones de esta sección permiten reproducir los principales resultados del trabajo. Algunas requieren tiempos de ejecución mayores que las opciones de consulta, por lo que es importante considerar los supuestos y las observaciones que acompañan cada resultado.
 
 ### Opción 15 — Umbral de penetración con inversor
 
-Barre la penetración de BTM con inversor y busca **a partir de qué punto una
-desconexión masiva llega a disparar el EDAC**.
+Evalúa distintos niveles de penetración de BTM conectado mediante inversores para identificar **a partir de qué nivel una desconexión masiva provoca la activación del EDAC**.
 
-Única pregunta: el % del BTM con inversor que se desconecta (por defecto `90`).
+El único parámetro solicitado es el porcentaje del BTM conectado mediante inversores que se desconecta. El valor predeterminado es `90`.
 
-Recorre diez niveles de penetración (del 5 % al 40 %) y para cada uno imprime
-cuántos MW se caen, el nadir y cuántos escalones del EDAC disparan. Lleva una
-marca `<- dispara` **en cada fila en la que el EDAC actúa**, no sólo en la
-primera: el umbral es el primer nivel marcado, y de ahí para abajo la columna
-queda limpia.
+El análisis recorre diez niveles de penetración, desde el 5 % hasta el 40 %. Para cada nivel presenta los MW desconectados, el nadir de frecuencia y el número de escalones del EDAC que se activan. La marca `<- dispara` aparece **en cada fila en la que se activa el EDAC**, no únicamente en la primera. El umbral corresponde al primer nivel de penetración en el que aparece esta marca; por debajo de ese nivel, la columna no presenta activaciones.
 
-**Esta opción lleva un aviso que no conviene saltarse.** El umbral depende del
-punto de operación sobre el que se mida, y las dos medidas son correctas porque
-describen sistemas distintos:
+#### Dependencia del punto de operación
 
-- sobre **el caso de referencia**, cuyo parque es el de 2042, el umbral central
-  es el 5,15 % y Colombia (6,25 %) queda **por encima**;
-- sobre un punto construido desde **el despacho real de XM**, donde la
-  generación por convertidor es mucho menor, el umbral sube al 8-9 % y Colombia
-  queda **por debajo**, con unos tres puntos de margen.
+El umbral depende del punto de operación utilizado. Los dos resultados que se presentan a continuación corresponden a sistemas diferentes y, por tanto, no son directamente intercambiables:
 
-Lo que las dos sostienen a la vez no es una cifra sino una **trayectoria**: hoy
-hay margen, y se estrecha a medida que la penetración por convertidor crece.
-Para verlo, elige una fecha con `p` y vuelve a correr esto.
+- Para **el caso de referencia**, cuyo parque de generación corresponde a 2042, el umbral central es del 5,15 %. La penetración de Colombia (6,25 %) se encuentra por encima de este valor.
+- Para **un punto construido a partir del despacho real de XM**, en el que la generación conectada mediante convertidores es considerablemente menor, el umbral aumenta a un intervalo del 8 % al 9 %. En este caso, la penetración de Colombia se encuentra por debajo del umbral, con un margen aproximado de tres puntos porcentuales.
+
+En conjunto, ambos resultados muestran que existe un margen respecto al umbral en el punto construido a partir del despacho de XM, pero que dicho margen se reduce a medida que aumenta la penetración de generación conectada mediante convertidores. Para evaluar este comportamiento, se puede seleccionar una fecha mediante `p` y ejecutar nuevamente la opción.
 
 ### Opción 16 — Sensibilidad del umbral
 
-Cuánto se mueve ese umbral si cambian las hipótesis. **No pregunta nada.**
+Cuantifica la variación del umbral cuando se modifican las hipótesis utilizadas en su cálculo. Esta opción no requiere parámetros adicionales.
 
-Imprime una tabla con cuatro hipótesis —el parque entero acoplado, una unidad
-de más por planta, el mínimo que cubre el despacho (la del caso base), y esa
-misma pero con la reserva del 3 % que exige la CREG— y para cada una la
-capacidad síncrona, la H, la reserva y el umbral resultante.
+Presenta una tabla con cuatro escenarios:
 
-Las dos primeras filas necesitan saber **cuántas unidades tiene cada planta**;
-si el punto activo no trae ese dato, la tabla sale con dos filas en vez de
-cuatro. Con los datos de PARATEC que trae el repositorio, salen las cuatro.
+1. El parque completo de generación acoplado.
+2. Una unidad adicional por planta.
+3. El número mínimo de unidades necesario para cubrir el despacho, correspondiente al caso base.
+4. El mismo escenario anterior, pero incluyendo la reserva del 3 % exigida por la CREG.
 
-Las dos hipótesis que de verdad lo mueven son **cuántas unidades están
-acopladas** y **cuánta reserva hay**, y ninguna de las dos es un dato: el
-despacho por unidad no lo tenemos, y la reserva admite dos lecturas legítimas.
+Para cada escenario se presenta la capacidad síncrona, la inercia `H`, la reserva y el umbral resultante.
 
-Sirve para saber si el resultado es firme o depende de lo que no sabemos. La
-conclusión defendible no es una cifra sino la horquilla.
+Los dos primeros escenarios requieren conocer **el número de unidades que componen cada planta**. Si el punto de operación activo no contiene esta información, la tabla presenta únicamente dos escenarios en lugar de cuatro. Con los datos de PARATEC incluidos en el repositorio, se pueden calcular los cuatro.
+
+Las hipótesis que tienen mayor influencia en el umbral son el número de unidades acopladas y la cantidad de reserva disponible. Ninguna de estas variables se conoce con precisión a partir de la información disponible: no se cuenta con el despacho por unidad y la reserva puede interpretarse de dos maneras válidas según el criterio adoptado.
+
+Esta opción permite evaluar cuánto depende el resultado de estas incertidumbres. Por ello, la conclusión debe considerar el intervalo obtenido y no únicamente un valor puntual.
 
 ### Opción 17 — Barrido del peso lambda
 
-Recorre el peso de la penalización por destruir BTM sano en **tres regímenes**:
-el evento de BTM, la operación normal de hoy y la operación normal con
-penetración alta.
+Evalúa la sensibilidad del peso de la penalización por desconectar generación BTM que permanece en servicio. El análisis considera **tres regímenes de operación**: el evento de desconexión de BTM, la operación normal actual y la operación normal con alta penetración.
 
-Pregunta sólo si continuar, porque **tarda unos 8 minutos: son 24 MILP
-completos** (cuatro valores de lambda × tres regímenes × dos semillas).
+El menú únicamente solicita confirmar si se desea continuar. El análisis tarda aproximadamente **8 minutos** y ejecuta 24 problemas MILP completos, correspondientes a cuatro valores de `lambda`, tres regímenes y dos semillas.
 
-El resultado es el que justifica el valor por defecto de lambda en la opción 5:
-calibrando sólo sobre el evento se elegiría un lambda alto, pero con penetración
-alta y BTM que *no* se cae, a ese lambda al optimizador le sale más barato no
-cortar y **el esquema deja de actuar**. El límite lo fija el régimen normal, no
-el evento. La tabla marca con `<- el rele no corta` las filas donde eso pasa.
+Los resultados permiten justificar el valor predeterminado de `lambda` utilizado en la opción 5. Si la calibración se realiza únicamente para el evento de desconexión de BTM, se obtiene un valor elevado de `lambda`. Sin embargo, cuando existe una penetración alta y el BTM no se desconecta, ese valor puede hacer que el optimizador prefiera no realizar cortes de carga. En consecuencia, **el esquema deja de actuar en el régimen normal**.
+
+Por esta razón, el régimen normal establece una restricción para la selección de `lambda` que no se identifica al calibrar exclusivamente con el evento. La tabla señala con la marca `<- el rele no corta` las filas en las que se presenta este comportamiento.
 
 ### Opción 18 — MILP frente al EDAC proporcional
 
-Corre el mismo evento con los dos métodos y compara cuánta generación embebida
-sana destruye cada uno **para conseguir el mismo alivio**. No pregunta nada: usa
-un escenario fijo (sintético al 20 %, cae el 90 %, más 600 MW de pérdida
-convencional).
+Ejecuta un mismo evento con los dos métodos de distribución del deslastre y compara la cantidad de generación embebida sana que desconecta cada método **para obtener el mismo alivio de potencia**.
 
-Mira también la última columna: el MILP **concentra el corte en muchas menos
-barras**, y eso deja la red más cargada que el reparto proporcional. Es el coste
-del método, y conviene citarlo junto al beneficio.
+La opción no solicita parámetros adicionales y utiliza un escenario fijo: penetración sintética del 20 %, desconexión del 90 % del BTM y una pérdida convencional adicional de 600 MW.
+
+La última columna permite identificar una diferencia relevante entre los métodos: el MILP concentra el deslastre en un número menor de barras que el reparto proporcional. Esta concentración puede dejar una mayor carga sobre la red restante. Por tanto, este efecto debe presentarse junto con la reducción de generación embebida desconectada al discutir las ventajas y limitaciones del método.
 
 ---
 
-## 6. Lo mismo desde la línea de órdenes
+## 6. Ejecución desde la línea de comandos
 
-Las opciones de **Simular** y la 18 son envoltorios de un módulo, y el menú te
-enseña la orden exacta antes de lanzarla. La tabla completa está en el
-[README](README.md#comandos).
+Las opciones de **Simular** y la opción 18 ejecutan módulos independientes. Antes de iniciarlos, el menú muestra el comando correspondiente. La lista completa de módulos y parámetros se encuentra en el apartado de comandos del [README](README.md#comandos).
 
-Las opciones de **Consultar** (9-14) y las de **Análisis** 15, 16 y 17 **no
-tienen equivalente en línea de órdenes**: están escritas dentro de `menu.py` y
-sólo se alcanzan desde el menú.
+Las opciones de **Consultar** (9 a 14) y las opciones 15, 16 y 17 de **Análisis** no tienen un equivalente directo en la línea de comandos. Estas funciones están implementadas dentro de `menu.py` y se ejecutan desde el menú.
 
-Lo que conviene saber de las que sí son módulos:
+### Selección del punto de operación
 
-Los módulos de simulación aceptan las mismas banderas de punto de operación:
+Los módulos de simulación aceptan las mismas opciones para definir el punto de operación. Por ejemplo:
 
 ```bash
 python -m stn.contingencias --fecha 2026-10-20 --periodo 19
 python -m stn.deslastre_btm --diurno 11 --comparar
 ```
 
-Sin ninguna bandera, corren sobre la punta nocturna.
+Si no se especifica ninguna opción de punto de operación, los módulos utilizan la punta nocturna.
 
-`stn.comparar_casos` es la excepción, porque trabaja con **dos** puntos a la
-vez. Cada columna se escribe como `punta`, `diurno:HORA` o `AAAA-MM-DD:PERIODO`:
+### Comparación de dos puntos de operación
+
+El módulo `stn.comparar_casos` constituye una excepción porque trabaja con **dos puntos de operación**. Cada caso se especifica mediante uno de los siguientes formatos: `punta`, `diurno:HORA` o `AAAA-MM-DD:PERIODO`.
 
 ```bash
 python -m stn.comparar_casos --caso-a 2026-10-20:5 --caso-b 2026-10-20:19
 ```
 
-Y para traer una fecha sin pasar por el menú:
+### Descarga de una fecha
+
+Para descargar los archivos de una fecha sin utilizar el menú:
 
 ```bash
 python -m stn.fuentes.descarga_xm --fecha 2026-11-01
@@ -701,69 +538,44 @@ python -m stn.fuentes.descarga_xm --listar
 
 ---
 
-## 7. Antes de citar una cifra
+## 7. Consideraciones para interpretar los resultados
 
-Cinco comprobaciones que evitan la mayoría de los errores de lectura:
+Antes de utilizar o presentar una cifra, se recomienda realizar las siguientes comprobaciones:
 
-1. **Mira de qué punto es.** Toda salida lleva su cabecera. Una cifra del
-   diurno comparada con una de la punta sin decirlo es un error, no un
-   hallazgo.
-2. **Mira la cobertura si es una fecha.** Demanda sin ubicar significa que el
-   EDAC dimensionó por debajo y el nadir sale optimista.
-3. **Un nadir sólo vale si no hubo colapso.** Si el sistema cruza los 57,5 Hz,
-   el mínimo de la traza es donde corta el integrador, no un nadir físico.
-   Los módulos no lo publican en ese caso, a propósito.
-4. **En el N-1, las tensiones son incrementales y las sobrecargas no.** Las
-   barras fuera de banda se cuentan respecto al caso base; los elementos
-   sobrecargados, en absoluto. No los sumes como si fueran la misma clase de
-   cifra.
-5. **Sin `--con-limites`, el colapso de tensión no puede aparecer.** Las barras
-   PV sostienen su tensión con el reactivo que haga falta.
+1. **Identificar el punto de operación.** Todas las salidas incluyen una cabecera con esta información. Comparar una cifra del escenario diurno con otra de la punta nocturna sin especificar esta diferencia puede conducir a conclusiones incorrectas.
+2. **Verificar la cobertura cuando se utiliza una fecha de XM.** Si una parte de la demanda no está ubicada en la red, el EDAC dimensiona el deslastre con una demanda inferior a la real. En consecuencia, el nadir calculado puede resultar optimista.
+3. **Comprobar que no se haya producido un colapso antes de interpretar el nadir.** Si la frecuencia del sistema desciende por debajo de 57,5 Hz, el mínimo de la señal puede corresponder al instante en que se detiene el integrador y no a un nadir físico. Por esta razón, los módulos no publican el valor del nadir en ese caso.
+4. **Distinguir las variaciones de tensión de las sobrecargas en el análisis N-1.** Las barras fuera de banda se contabilizan con respecto al caso base, mientras que las sobrecargas de los elementos se evalúan en términos absolutos. Estas cantidades representan criterios distintos y no deben interpretarse como magnitudes equivalentes.
+5. **Verificar la activación de `--con-limites` al analizar estabilidad de tensión.** Sin esta opción, las barras PV pueden mantener su consigna de tensión sin una restricción efectiva de potencia reactiva. En consecuencia, el análisis no puede representar el colapso de tensión asociado a la saturación de los límites reactivos de los generadores.
 
 ---
 
 ## 8. Problemas frecuentes
 
-**`python` dice que la versión es 3.10 o menor.** PyPSA 1.x no publica ruedas
-para versiones anteriores a 3.11 y la instalación falla con un muro de texto
-que no menciona la versión. Comprueba con `py --list` (Windows) o
-`python3 --version` (macOS/Linux) y crea el entorno con un intérprete más
-nuevo. El modelo lo detecta al arrancar y lo dice en una frase.
+**El intérprete de `python` corresponde a la versión 3.10 o a una anterior.** PyPSA 1.x no distribuye paquetes `wheel` para versiones anteriores a Python 3.11, por lo que la instalación puede fallar y mostrar un mensaje de error extenso sin identificar claramente la causa. Comprueba la versión instalada mediante `py --list` en Windows o `python3 --version` en macOS y Linux, y crea el entorno virtual con un intérprete compatible. El modelo también verifica la versión al iniciarse y muestra una advertencia cuando no cumple el requisito.
 
-**El menú sólo ofrece cuatro fechas.** Son las que trae el repositorio. La
-quinta entrada de la lista —*otra fecha, descargarla de XM ahora*— trae
-cualquier otra.
+**El menú solo muestra cuatro fechas.** Estas son las fechas incluidas inicialmente en el repositorio. La quinta entrada de la lista —`otra fecha, descargarla de XM ahora`— permite solicitar una fecha adicional.
 
-**Error de certificado al descargar una fecha.** Habitual detrás del proxy de
-una empresa, que firma con una raíz propia que Python no conoce. Hay que
-apuntar `SSL_CERT_FILE` a un almacén que sí la tenga; el mensaje de error da la
-orden exacta para tu sistema. En Windows suele no hacer falta.
+**Se produce un error de certificado al descargar una fecha.** Este problema puede presentarse al trabajar detrás del proxy de una empresa que utiliza un certificado raíz propio que Python no reconoce. En ese caso, se debe configurar `SSL_CERT_FILE` para que apunte a un almacén de certificados que incluya la autoridad correspondiente. El mensaje de error proporciona la instrucción específica para el sistema operativo utilizado. En Windows, normalmente no es necesario realizar esta configuración.
 
-**No hay ninguna fecha en disco.** El descargador necesita al menos una para
-heredar el directorio de PARATEC. Recupera las que trae el repositorio en
-`data/xm/paratec/`.
+**No hay fechas disponibles en disco.** El descargador necesita al menos una fecha existente para heredar el directorio de PARATEC. Se deben recuperar los archivos incluidos en el repositorio dentro de `data/xm/paratec/`.
 
-**Una fecha antigua no pasa el filtro de cobertura.** Las anteriores a
-septiembre de 2026 usan códigos de nodo que la tabla de equivalencias aún no
-cubre. Úsalas sabiendo que el nadir saldrá optimista, o elige una más reciente.
+**Una fecha antigua no cumple el filtro de cobertura.** Las fechas anteriores a septiembre de 2026 utilizan códigos de nodo que todavía no están cubiertos por la tabla de equivalencias. En consecuencia, pueden generar resultados de frecuencia optimistas. Se recomienda utilizar fechas más recientes o interpretar estos resultados considerando la limitación de cobertura.
 
-**El barrido N-1 de la opción 4 dice que faltan resultados.** Esa comparación
-lee los CSV ya generados. O corres antes el N-1 de cada punto, o vuelves a
-llamarla pidiendo que lo corra ella (tarda varios minutos por columna).
+**El barrido N-1 de la opción 4 indica que faltan resultados.** La comparación utiliza los archivos CSV generados previamente. Para completar el análisis, se debe ejecutar primero el N-1 para cada punto de operación o seleccionar la opción que permite realizar el barrido durante la comparación. Esta última alternativa requiere varios minutos por cada punto de operación.
 
 ---
 
-## Para quien quiera verificar el modelo
+## 9. Verificación del modelo
 
-El menú es la vía de **uso**. Las comprobaciones internas no están en él, pero
-siguen existiendo como comandos:
+El menú está diseñado para el **uso del modelo**. Las pruebas y comprobaciones internas se ejecutan mediante comandos independientes:
 
 ```bash
-python -m stn.validacion            # contraste contra PowerFactory
+python -m stn.validacion            # Contraste contra PowerFactory
 python -m tests.test_invariantes    # 34 invariantes del modelo
 python -m tests.test_regresion_pf   # 18 regresiones contra el caso congelado
-python -m tests.test_fuente_xm      # 52 de la fuente de datos de XM
+python -m tests.test_fuente_xm      # 52 pruebas de la fuente de datos de XM
 python -m tests.verificar_sistema   # 44 comprobaciones externas
-python -m stn.limites_reactivos     # curva de capacidad de reactivo
-python -m stn.escenario_diurno      # cómo se deriva el caso diurno
+python -m stn.limites_reactivos     # Curva de capacidad de reactivo
+python -m stn.escenario_diurno      # Derivación del caso diurno
 ```
