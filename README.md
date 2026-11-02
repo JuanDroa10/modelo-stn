@@ -13,8 +13,7 @@ Modelo del **Sistema de Transmisión Nacional** de 220/500 kV construido sobre
 
 El punto de operación puede venir de un caso de flujo de carga de PowerFactory
 o construirse para **cualquier fecha y periodo** a partir del despacho
-programado y el pronóstico de demanda por barra que publica XM, que el propio
-modelo descarga.
+programado y el pronóstico de demanda por barra que publica XM.
 
 > **Información derivada de fuentes públicas de XM S.A. E.S.P. (PARATEC,
 > `dDEC`, `PRON_BARRA`).** Los resultados describen un programa de despacho o
@@ -26,12 +25,8 @@ modelo descarga.
   anteriores, así que con 3.10 la instalación falla. Compruébalo antes de
   empezar:
 
-  ```powershell
-  py --list          # Windows: los intérpretes instalados
-  ```
-
   ```bash
-  python3 --version  # macOS o Linux
+  python3 --version
   ```
 
   Si da 3.10 o menos, usa un intérprete más nuevo al crear el entorno.
@@ -42,29 +37,35 @@ modelo descarga.
 ## Primeros pasos
 
 El repositorio trae los datos necesarios, de modo que **funciona sin internet
-desde el primer momento** (solo hace falta para descargar fechas nuevas).
+desde el primer momento**. 
 
-### Windows (PowerShell)
+La forma de crear y activar el entorno virtual depende de tu sistema operativo:
+
+**En Windows (PowerShell):**
 
 ```powershell
+# 1. Crear el entorno (usa `py -3.11`, `python` o `python3.12` según tu instalación)
 py -3.11 -m venv .venv
+
+# 2. Activar el entorno
 .\.venv\Scripts\Activate.ps1
+
+# 3. Instalar dependencias y ejecutar
 pip install -r requirements.txt
 python menu.py
 ```
 
-Si `Activate.ps1` falla con un error de *execution policy* —lo habitual en una
-instalación recién hecha—, se permite solo para esta ventana y se vuelve a
-intentar:
+*Notas para Windows:*
+*   *Si PowerShell lanza un error de "ejecución de scripts deshabilitada", ejecuta primero `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` y vuelve a intentar la activación.*
+*   *Si instalaste Python desde la Microsoft Store, el comando `py` podría no detectarlo. En ese caso, crea el entorno llamando directamente al ejecutable (ej. `python3.12 -m venv .venv`).*
 
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
-
-### macOS o Linux (Bash)
+**En macOS o Linux (Bash):**
 
 ```bash
+# 1. Crear y activar el entorno en un solo paso
 python3.11 -m venv .venv && source .venv/bin/activate
+
+# 2. Instalar dependencias y ejecutar
 pip install -r requirements.txt
 python menu.py
 ```
@@ -78,11 +79,6 @@ SOBRE QUE SISTEMA QUIERES TRABAJAR
   2) diurno 10-11 h           (con sol; DERIVADO de la punta)
   3) una fecha concreta       (despacho y pronostico reales de XM)
 ```
-
-La tercera lista las fechas que ya están en disco y, al final, **`otra fecha
-— descargarla de XM ahora`**: se escribe la fecha y el modelo se trae del
-portal público el despacho y el pronóstico de ese día. Hace falta internet
-solo para eso.
 
 Después ofrece 22 opciones agrupadas en **simular**, **consultar el modelo** y
 **análisis**. Cada una explica qué hace y cuánto tarda antes de lanzarla, y se
@@ -104,7 +100,6 @@ Todo lo que hace el menú está disponible también como módulo:
 | `python -m stn.comparar_casos` | punta y diurno, lado a lado |
 | `python -m stn.validacion` | contraste contra PowerFactory |
 | `python -m stn.mapa_interactivo` | mapa HTML georreferenciado |
-| `python -m stn.fuentes.descarga_xm --fecha 2026-11-01` | trae una fecha nueva de XM |
 
 Los módulos de simulación aceptan `--diurno [HORA]` y
 `--fecha AAAA-MM-DD --periodo N` para correr sobre otro punto de operación:
@@ -123,8 +118,8 @@ Las salidas se escriben en `resultados/`, con un sufijo por punto de operación
 ```bash
 python -m tests.test_invariantes     # 34 invariantes del modelo
 python -m tests.test_regresion_pf    # 18 regresiones contra el caso congelado
-python -m tests.test_fuente_xm       # 52 de la fuente de datos de XM
-python -m tests.verificar_sistema    # 44 comprobaciones externas
+python -m tests.test_fuente_xm       # 41 de la fuente de datos de XM
+python -m tests.verificar_sistema    # 67 comprobaciones externas
 ```
 
 ## Estructura
@@ -140,7 +135,7 @@ data/
   red/           lineas, mapeo nodo-barra, contorno geografico
   punto_operacion/  el caso de PowerFactory extraido
   paratec/       reportes de PARATEC: capacidad, inercia, estatismo, reactivo
-  xm/            cuatro fechas de ejemplo; aqui aterrizan las que se bajen
+  xm/            tres fechas de ejemplo, en la capa normalizada de sinsim
   golden/        estado congelado del caso de referencia, para las regresiones
 tests/         las cuatro baterias de comprobacion
 tools/         utilidades: recapturar el congelado
@@ -153,47 +148,9 @@ tools/         utilidades: recapturar el congelado
   máquina a máquina para 30 de las 45 barras generadoras.
 - **Despacho programado (`dDEC`) y pronóstico de demanda por barra
   (`PRON_BARRA`)** (XM): definen el punto de operación de una fecha concreta.
-  El repositorio incluye cuatro fechas de ejemplo y
-  `stn.fuentes.descarga_xm` trae cualquier otra del portal público, sin
-  dependencias adicionales.
-
-### Traer otra fecha
-
-```bash
-python -m stn.fuentes.descarga_xm --fecha 2026-11-01
-```
-
-De un día solo son suyos **el despacho y el pronóstico de demanda**; eso es lo
-que se descarga. Las demás tablas del snapshot vienen de PARATEC, que es el
-registro del sistema y **no tiene histórico** —su API devuelve siempre el
-estado de hoy, se le pida la fecha que se le pida—, así que se heredan del
-snapshot más reciente que haya en disco y el `manifest.json` deja escrito de
-cuál. El modelo las usa solo como directorio: en qué subestación está cada
-barra, qué línea une qué, dónde se conecta cada unidad. Un recurso que el
-despacho nombre y el directorio no conozca no se cuela en silencio: baja la
-cobertura, que es lo que el menú enseña antes de dejar seguir.
-
-XM publica el despacho de un día la tarde anterior, de modo que la fecha más
-nueva que se puede pedir es mañana.
-
-Si el certificado del portal no se puede verificar —habitual detrás del proxy
-de una empresa, que firma con una raíz propia que Python no conoce—, hay que
-apuntar `SSL_CERT_FILE` a un almacén que sí la tenga:
-
-```powershell
-$env:SSL_CERT_FILE = "C:\ruta\a\cacert.pem"
-```
-
-```bash
-export SSL_CERT_FILE=/opt/homebrew/etc/ca-certificates/cert.pem
-```
-
-En Windows suele no hacer falta: Python lee el almacén de certificados del
-sistema, donde la raíz de la empresa ya está.
-
-Las fechas descargadas con [sinsim](https://github.com/jucajata/sinsim)
-también sirven: se apunta `SINSIM_DATA` a su carpeta de datos y el modelo lee
-de ahí en vez de `data/xm/`.
+  El repositorio incluye tres fechas de ejemplo; para descargar otras se usa
+  [sinsim](https://github.com/jucajata/sinsim) y se apunta la variable de
+  entorno `SINSIM_DATA` a su carpeta de datos.
 - **Caso de flujo de carga de PowerFactory**: el punto de operación medido
   contra el que se contrasta el modelo.
 
