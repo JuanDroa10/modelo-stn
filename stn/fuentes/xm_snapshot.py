@@ -86,8 +86,11 @@ from stn.fuentes import nombres as N
 from stn.fuentes.calidad import ReporteCalidad
 
 
-# Raiz de los datos de sinsim. Se puede apuntar a otra con la variable de
-# entorno SINSIM_DATA; por omision, el repo hermano.
+# Raiz de los snapshots de XM. Por omision, `data/xm/` dentro del propio
+# repositorio, que es donde viven las fechas de ejemplo y donde aterrizan las
+# que baje `fuentes.descarga_xm`. Se puede apuntar a otra carpeta con la
+# variable de entorno SINSIM_DATA, que es lo que hace falta para leer las
+# fechas descargadas con sinsim.
 DIR_XM = str(XM)
 
 TABLAS = ('buses', 'generators', 'dispatch', 'demand', 'lines')

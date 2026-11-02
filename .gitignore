@@ -25,9 +25,14 @@ stn_network_georef*/
 *.html
 !data/**/*.html
 
-# --- Snapshots de XM descargados por el usuario
-# Las tres fechas de ejemplo SI van al repositorio; lo que descargue
-# `sinsim scrape` despues, no.
+# --- Snapshots de XM
+# De cada fecha se ignoran SOLO los ficheros crudos que baja el descargador
+# (los .txt del portal de XM). Las tablas `normalized/` SI van al
+# repositorio: son las cuatro fechas de ejemplo que lo hacen funcionar sin
+# internet ---y tambien, ojo, cualquier fecha nueva que descargues, unos
+# 750 kB cada una---. Si prefieres que las tuyas se queden en tu disco,
+# cambia la linea de abajo por `data/xm/paratec/*/` y vuelve a anadir a mano
+# las cuatro de ejemplo con `git add -f`.
 data/xm/paratec/*/raw/
 
 # --- Sistema operativo y editores

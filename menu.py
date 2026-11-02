@@ -386,12 +386,87 @@ def sim_caso_base():
     correr(['-m', 'stn.main'] + _punto())
 
 
+def _spec_activo():
+    """El punto ACTIVO escrito como lo entiende `comparar_casos`."""
+    k = _PUNTO['kw']
+    if _PUNTO['tipo'] == 'fecha':
+        return f"{k['fecha']}:{k['periodo']}"
+    if _PUNTO['tipo'] == 'diurno':
+        return f"diurno:{k['hora']}"
+    return 'punta'
+
+
+def _otra_columna():
+    """El SEGUNDO punto de la comparacion. None si no se eligio ninguno.
+
+    La primera columna es siempre el punto activo de la sesion, asi que aqui
+    solo se pregunta contra que. Las opciones se adaptan a lo que hay
+    elegido: con una fecha de XM activa, lo que casi siempre se quiere es
+    otro periodo de ESE mismo dia ---la hora critica contra la punta del
+    dia---, y por eso va la primera.
+    """
+    tipo = _PUNTO['tipo']
+    ops = []
+    if tipo == 'fecha':
+        ops.append('otro periodo de la MISMA fecha')
+    if tipo != 'punta':
+        ops.append('la punta nocturna 18-22 h')
+    ops.append('el punto diurno, a la hora que se diga')
+    ops.append('otra fecha de XM ya descargada')
+    op = elegir("Contra que comparar el punto activo:", ops, 0)
+
+    if op.startswith('otro periodo'):
+        print()
+        parrafo("El barrido de las 24 horas situa la hora critica en la 4 o "
+                "la 5 de la madrugada, y NUNCA en la de maxima demanda: es "
+                "el periodo que mas suele interesar enfrentar a la punta.")
+        actual = _PUNTO['kw']['periodo']
+        per = preguntar("periodo horario de la otra columna (1-24)",
+                        19 if actual == 5 else 5, int)
+        return f"{_PUNTO['kw']['fecha']}:{min(max(int(per), 1), 24)}"
+
+    if op.startswith('la punta'):
+        return 'punta'
+
+    if op.startswith('el punto diurno'):
+        h = preguntar("hora del diurno (clave HourNN de XM; 11 = 10:00-11:00)",
+                      11, int)
+        return f"diurno:{int(h)}"
+
+    fechas = _fechas()
+    if not fechas:
+        print(_c("\n   no hay ninguna fecha en disco", '93'))
+        return None
+    print()
+    parrafo("Fechas en disco:")
+    for i, f in enumerate(fechas):
+        print(f"     {i+1:2d}) {f}")
+    i = preguntar(f"cual (1-{len(fechas)})", len(fechas), int)
+    if not 1 <= i <= len(fechas):
+        return None
+    per = preguntar("periodo horario (1-24; 19 es la punta)", 19, int)
+    return f"{fechas[i-1]}:{min(max(int(per), 1), 24)}"
+
+
 def sim_comparar():
-    parrafo("Corre la MISMA bateria sobre los dos puntos de operacion y los "
+    parrafo("Corre las MISMAS pruebas sobre dos puntos de operacion y los "
             "imprime en columnas: balance de potencia, tensiones, inercia, "
             "reserva, respuesta a la misma perturbacion y balance por area. "
             "Evita tener que cruzar a mano dos salidas largas.")
-    args = ['-m', 'stn.comparar_casos']
+    print()
+    a = _spec_activo()
+    print(f"   columna A: {_c(_PUNTO['etiqueta'], '1;97')}   "
+          f"{_c('(el punto activo; se cambia con la tecla p)', '90')}")
+    print()
+    b = _otra_columna()
+    if b is None:
+        print(_c("   no se eligio segunda columna", '93'))
+        return
+    if b == a:
+        print(_c("\n   las dos columnas serian el mismo punto de operacion: "
+                 "no hay nada que comparar", '93'))
+        return
+    args = ['-m', 'stn.comparar_casos', '--caso-a', a, '--caso-b', b]
     mw = preguntar("perturbacion de referencia en MW", 3000.0, float)
     args += ['--evento-mw', str(mw)]
     if elegir("El barrido N-1:",
@@ -402,48 +477,94 @@ def sim_comparar():
     correr(args)
 
 
-def sim_validacion():
-    # La validacion contrasta contra el reporte de PowerFactory, que es de la
-    # punta. No acepta --diurno ni --fecha a proposito: no existe un caso de
-    # referencia con el que contrastarlos, y un modulo que dijera "validado"
-    # sobre ellos estaria mintiendo. Se avisa en vez de callar, porque si no
-    # el usuario cree que valido el punto que tiene activo.
-    if _PUNTO['tipo'] != 'punta':
-        print()
-        print(_c(f"   el punto activo es {_PUNTO['etiqueta']}, pero la "
-                 f"validacion", '93'))
-        print(_c("   SIEMPRE contrasta la punta: es el unico caso con "
-                 "referencia.", '93'))
-        print(_c("   Lo que sigue NO valida el punto que tienes elegido.",
-                 '93'))
-        print()
-    correr(['-m', 'stn.validacion'])
+def _elegir_elemento(maximo=25):
+    """Una linea o un trafo concreto, elegido por busqueda de texto.
 
+    Los nombres del modelo son largos ---'ANTIOQUIA 500 - CERROMATOSO 500 1'---
+    y nadie se los sabe de memoria: pedirlos a pelo convertiria la opcion en
+    un juego de adivinar, y un nombre mal escrito solo da un 'no existe en la
+    red' despues de haber construido el caso entero.
 
-def sim_invariantes():
-    correr(['-m', 'tests.test_invariantes'])
+    Se busca sobre el caso YA cacheado, que es exactamente la red que va a
+    construir el subproceso, asi que lo que se elige aqui existe seguro alli.
+    Sin texto de busqueda se ofrecen las mas cargadas, que son las
+    contingencias que de verdad interesan y ademas evita escupir 296 nombres.
+
+    Devuelve el nombre, o None si no se eligio nada.
+    """
+    n, _ = base()
+
+    filas = []
+    for tipo, tabla, flujo in (('linea', n.lines, n.lines_t.p0),
+                               ('trafo', n.transformers, n.transformers_t.p0)):
+        p0 = flujo.iloc[0]
+        for nm in tabla.index:
+            s_nom = float(tabla.at[nm, 's_nom'])
+            pct = 100 * abs(float(p0[nm])) / s_nom if s_nom > 0 else 0.0
+            filas.append((nm, tipo, pct))
+
+    q = preguntar("parte del nombre (Enter = las mas cargadas)", "")
+    if q:
+        Q = q.upper()
+        hallados = [f for f in filas if Q in f[0].upper()]
+        if not hallados:
+            print(_c(f"\n   nada coincide con '{q}'", '93'))
+            pausa()
+            return None
+        hallados.sort(key=lambda f: -f[2])
+        titulo_lista = f"{len(hallados)} coincidencias, de mas a menos cargada"
+    else:
+        hallados = sorted(filas, key=lambda f: -f[2])
+        titulo_lista = "las mas cargadas del caso base"
+
+    recorte = hallados[:maximo]
+    print()
+    parrafo(titulo_lista + ':')
+    for i, (nm, tipo, pct) in enumerate(recorte):
+        print(f"     {i+1:2d}) [{tipo}] {nm[:48]:50s} {pct:5.1f} % de s_nom")
+    if len(hallados) > len(recorte):
+        print(_c(f"     ... y {len(hallados)-len(recorte)} mas; afina la "
+                 f"busqueda para verlas", '90'))
+    print()
+    i = preguntar(f"cual (1-{len(recorte)}, 0 = ninguna)", 1, int)
+    if not 1 <= i <= len(recorte):
+        return None
+    return recorte[i - 1][0]
 
 
 def sim_n1():
-    tipo = elegir("Que quieres barrer:",
-                  ["todo (lineas y trafos, 296 casos, ~2 min)",
+    tipo = elegir("Que quieres simular:",
+                  ["el barrido completo (lineas y trafos, 296 casos, ~2 min)",
                    "solo 500 kV (55 casos, rapido)",
                    "un area concreta",
+                   "UNA contingencia concreta: el N-1 de un elemento que eliges",
                    "dobles contingencias N-2 en 500 kV"], 0)
     args = ['-m', 'stn.contingencias']
+    solo_una = False
     if tipo.startswith('solo 500'):
         args += ['--nivel', '500']
     elif tipo.startswith('un area'):
         a = preguntar("area (Caribe, Antioquia, Oriental, Nordeste, Suroccidental)",
                       "Caribe")
         args += ['--area', a]
+    elif tipo.startswith('UNA'):
+        nombre = _elegir_elemento()
+        if nombre is None:
+            print(_c("   no se eligio ningun elemento", '93'))
+            return
+        args += ['--caso', nombre]
+        solo_una = True
     elif tipo.startswith('dobles'):
         args += ['--n2', '--nivel', '500']
     if elegir("Imponer la curva de capacidad de los generadores (PV->PQ)?",
               ["no (mas rapido)", "si (mas lento, detecta colapsos de tension)"], 0
               ).startswith('si'):
         args.append('--con-limites')
-        print(_c("   aviso: con limites el barrido completo tarda ~15 min", '93'))
+        # Un solo caso con limites son unos segundos; el barrido entero, un
+        # cuarto de hora. El aviso solo tiene sentido en el segundo.
+        if not solo_una:
+            print(_c("   aviso: con limites el barrido completo tarda ~15 min",
+                     '93'))
     args += _punto()
     correr(args)
 
@@ -468,21 +589,6 @@ def sim_frecuencia():
                   "comparar los dos"], 0)
     args += ['--modo', rep.split()[0]]
     args += _punto()
-    correr(args)
-
-
-def sim_diurno():
-    parrafo("El caso base es la punta nocturna (18-22 h) y a esa hora la "
-            "fotovoltaica entrega CERO: el evento que estudia la tesis no "
-            "puede ocurrir. Esta opcion construye el punto diurno, derivado "
-            "del de punta con factores horarios medidos de la API de XM.")
-    h = elegir("Que hora:",
-               ["10:00-11:00  (maxima penetracion solar, 23,5 %)",
-                "12:00-13:00  (el mediodia: mas demanda, menos penetracion)"], 0)
-    args = ['-m', 'stn.escenario_diurno', '--hora', '11' if h.startswith('10') else '13']
-    if elegir("Reparto de la solar por:", ["subarea (16 grupos)",
-                                           "area (5 grupos)"], 0).startswith('area'):
-        args += ['--por', 'area']
     correr(args)
 
 
@@ -566,7 +672,7 @@ def sim_cascada():
 
 
 def sim_barrido():
-    """Las 24 horas de una fecha, con la misma bateria en cada una.
+    """Las 24 horas de una fecha, con las mismas pruebas en cada una.
 
     NO sigue al punto de operacion, y es la quinta opcion que no lo hace: un
     barrido horario solo tiene sentido sobre una fecha de XM ---la punta y el
@@ -582,10 +688,10 @@ def sim_barrido():
         pausa()
         return
 
-    parrafo("Somete las 24 horas de una fecha a la misma bateria y al mismo "
-            "evento en MW absolutos. Es lo que convierte 'cual es la hora "
-            "critica' de una eleccion en una medida. Tarda unos 3 minutos "
-            "por fecha.")
+    parrafo("Somete las 24 horas de una fecha a las mismas pruebas y al "
+            "mismo evento en MW absolutos. Es lo que convierte 'cual es "
+            "la hora critica' de una eleccion en una medida. Tarda unos "
+            "3 minutos por fecha.")
     print()
 
     # De la mas reciente a la mas antigua, y no al reves: el catalogo de
@@ -624,10 +730,6 @@ def sim_barrido():
     if elegir("Grafico de las 24 horas:", ["si", "no"], 0).startswith('si'):
         args += ['--grafico']
     correr(args)
-
-
-def sim_reactivos():
-    correr(['-m', 'stn.limites_reactivos'] + _punto())
 
 
 def sim_mapa():
@@ -1095,36 +1197,30 @@ MENU = [
      "y muestra el balance por area, la reconciliacion de la demanda y los "
      "totales. Es el punto de partida de todo lo demas. Genera ademas el mapa y "
      "los ficheros de exportacion. Tarda ~1 min."),
-    ('Validacion contra PowerFactory', sim_validacion,
-     "Compara los flujos de linea del modelo con los que reporta el caso de "
-     "PowerFactory. Solo 39 de 280 lineas son contrastables, asi que es un "
-     "control de sanidad y no una verificacion. Incluye el contraste estricto "
-     "contra Edge Elements y el cruce con la capacidad instalada de PARATEC."),
-    ('Comprobar los invariantes del modelo', sim_invariantes,
-     "Treinta y cuatro comprobaciones de lo que NO puede cambiar sin que algo "
-     "este mal: que los cuatro modulos que construyen la red resuelvan la "
-     "misma, "
-     "que el balance cierre, que nadie despache sobre su placa, que el EDAC no "
-     "pase del 40 %, que el MILP no bote mas carga de la que hay, que la "
-     "cascada conserve la energia y que el caso diurno tenga menos inercia que "
-     "el de punta. Correr despues de tocar config.py o el nucleo."),
-    ('Contingencias N-1', sim_n1,
-     "Saca de servicio cada linea y transformador, uno a uno, y comprueba tres "
-     "cosas: que el flujo siga convergiendo, que nadie quede sobrecargado sobre "
-     "su limite de emergencia, y que ninguna tension se salga de 0,9-1,1 pu. "
-     "Las violaciones se cuentan respecto al caso base."),
+    ('Simular contingencias', sim_n1,
+     "Saca de servicio lineas y transformadores y comprueba tres cosas: que el "
+     "flujo siga convergiendo, que nadie quede sobrecargado sobre su limite de "
+     "emergencia, y que ninguna tension se salga de 0,9-1,1 pu. Se puede barrer "
+     "el sistema entero elemento a elemento, acotar el barrido a un nivel de "
+     "tension o a un area, simular UNA contingencia concreta que se elige por "
+     "nombre, o pasar a dobles contingencias N-2. Las TENSIONES fuera de "
+     "banda se cuentan respecto al caso base, que ya tiene las suyas, asi "
+     "que solo salen las que anade la contingencia; las SOBRECARGAS no: "
+     "se cuentan en absoluto e incluyen las que ya existian."),
     ('Dinamica de frecuencia (EDAC y AGC)', sim_frecuencia,
      "Simula que pasa cuando se pierde generacion de golpe: integra la ecuacion "
      "de oscilacion, dispara los escalones del EDAC segun el Acuerdo 2105, "
      "reparte el deslastre y deja que el AGC absorba el resto. Termina con un "
      "flujo AC del estado post-evento."),
-    ('Comparar punta y diurno lado a lado', sim_comparar,
-     "Somete los DOS puntos de operacion a la misma bateria y los imprime en "
+    ('Comparar dos horas lado a lado', sim_comparar,
+     "Somete DOS puntos de operacion a las mismas pruebas y los imprime en "
      "columnas con la variacion ya calculada: balance de potencia, tensiones y "
      "cargabilidad, inercia y reserva, respuesta a la misma perturbacion, la "
      "contingencia mas grande de cada uno, balance por area, N-1 y el pool de "
-     "BTM. Es la via rapida para ver en que se diferencian sin cruzar dos "
-     "salidas largas a mano."),
+     "BTM. Las dos columnas se eligen: dos periodos de la misma fecha de XM, "
+     "dos horas del diurno, o la punta contra cualquiera de ellas. Es la via "
+     "rapida para ver en que se diferencian sin cruzar dos salidas largas a "
+     "mano."),
     ('Deslastre con BTM  [la contribucion]', sim_btm,
      "El algoritmo central del trabajo. Reparte generacion detras del contador "
      "por las barras, desconecta de golpe la parte conectada por inversor, y "
@@ -1134,13 +1230,8 @@ MENU = [
      "A diferencia del N-1, no supone que el sistema aguanta el primer golpe: "
      "encadena aperturas, deslastre y disparos de proteccion en una sola linea "
      "de tiempo, ronda tras ronda, hasta que el sistema se estabiliza o colapsa."),
-    ('Limites de reactivo (curva de capacidad)', sim_reactivos,
-     "Impone la curva de capacidad de cada maquina conmutando a PQ las que la "
-     "excedan. Desde que LIMITES_REACTIVOS esta activado el caso base YA los "
-     "respeta; aqui se ve el antes y el despues: quien se salia, cuanto, y que "
-     "cuesta en el contraste contra PowerFactory."),
     ('Barrido de las 24 horas de una fecha', sim_barrido,
-     "Somete las 24 horas de una fecha a la misma bateria ---cobertura, red, "
+     "Somete las 24 horas de una fecha a las mismas pruebas ---cobertura, red, "
      "inercia y el mismo evento en MW absolutos--- y deja la tabla en un CSV. "
      "Es lo que permite que 'cual es la hora critica' deje de contestarse por "
      "eleccion y pase a contestarse por medida: sale la 4 o la 5 de la "
@@ -1168,13 +1259,6 @@ MENU = [
      "La contabilidad de la energia que el modelo no ve, los nodos de generacion "
      "que no se pueden atribuir a ninguna barra del STN, y la lista priorizada "
      "de que datos habria que conseguir."),
-    ('Como se construye el escenario diurno', sim_diurno,
-     "El punto diurno se elige al entrar, con la opcion `p`; esto ENSEÑA de "
-     "donde sale. Deriva del caso de punta aplicando factores horarios MEDIDOS "
-     "de la API de XM (638 dias de demanda, 62 laborables de despacho por "
-     "tecnologia) y se queda en 10:00-11:00, con 2.454 MW de solar "
-     "produciendo y la demanda al 90 % de la punta. Sale con un 25 % menos de "
-     "energia cinetica: menos demanda y mas fragil, que es todo el punto."),
     ('El BTM colombiano', con_btm,
      "Composicion del BTM registrado en PARATEC por tecnologia y por area. Lo "
      "importante: el 96,9 % del BTM real ---los AGPE, 740,8 MW--- se conecta "
@@ -1189,9 +1273,11 @@ MENU = [
     ('Umbral de penetracion con inversor', ana_umbral,
      "Barre la penetracion de BTM con inversor y busca a partir de que punto una "
      "desconexion masiva llega a disparar el EDAC. Es el resultado fechable del "
-     "trabajo. Colombia queda por debajo con las hipotesis centrales, pero por "
-     "encima si se toma la reserva minima que exige la norma: mira la "
-     "sensibilidad del umbral antes de citar una cifra sola."),
+     "trabajo. Sobre ESTE caso de referencia Colombia (6,25 %) queda POR "
+     "ENCIMA del valor central del umbral (5,15 %), y mas aun con la reserva "
+     "minima que exige la norma; sobre una fecha real de XM el umbral sube "
+     "al 8-9 % y queda por debajo. Mira la sensibilidad del umbral antes de "
+     "citar una cifra sola."),
     ('Sensibilidad del umbral', ana_sensibilidad,
      "Cuanto se mueve ese umbral si cambian las hipotesis sobre la capacidad no "
      "declarada. Sirve para saber si el resultado es firme o depende de lo que "

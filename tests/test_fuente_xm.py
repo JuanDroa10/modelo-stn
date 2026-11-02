@@ -706,11 +706,11 @@ def test_una_fecha_sin_snapshot_dice_como_descargarla():
 # ---------------------------------------------------------------------------
 # El descargador
 #
-# NINGUNA de estas toca la red: el portal de XM no es nuestro y una bateria
-# que dependa de el falla los dias que XM este de mantenimiento, que es la
-# peor forma de fallar ---la que enseña a ignorar el rojo---. Lo que se fija
-# aqui son los dos formatos y las comprobaciones que impiden construir un
-# punto de operacion con un fichero a medias.
+# NINGUNA de estas toca la red: el portal de XM no es nuestro y un banco de
+# pruebas que dependa de el falla los dias que XM este de mantenimiento, que
+# es la peor forma de fallar ---la que enseña a ignorar el rojo---. Lo que se
+# fija aqui son los dos formatos y las comprobaciones que impiden construir
+# un punto de operacion con un fichero a medias.
 # ---------------------------------------------------------------------------
 
 def _ddec(filas, totales=None):

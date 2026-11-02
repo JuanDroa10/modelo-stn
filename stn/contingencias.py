@@ -570,13 +570,46 @@ def main():
                 print(f"AVISO: '{nombre}' no existe en la red")
         if not elementos:
             return 1
-        print(f"\nSimulando la salida simultanea de {len(elementos)} elementos:")
-        for _, nm in elementos:
-            print(f"  - {nm}")
-        r = simular(base, elementos, base_diag)
+        if len(elementos) == 1:
+            print(f"\nN-1 de un solo elemento: {elementos[0][1]}")
+        else:
+            print(f"\nSimulando la salida simultanea de {len(elementos)} "
+                  f"elementos:")
+            for _, nm in elementos:
+                print(f"  - {nm}")
+        # `con_limites` se pasa, y no por completitud: sin esto `--caso
+        # --con-limites` aceptaba la bandera y resolvia el caso SIN la curva
+        # de capacidad, de modo que el unico camino que puede detectar un
+        # colapso de tension era justo el que no la imponia. La bandera decia
+        # una cosa y el resultado era otra.
+        r = simular(base, elementos, base_diag, con_limites=args.con_limites)
         print()
         for k, v in r.items():
             print(f"  {k:20s}: {v}")
+        # El veredicto, por escrito. El diccionario de arriba es exacto pero
+        # hay que saber leerlo: `n_sobrecargas` 0 y `convergio` True es un
+        # N-1 limpio, y eso merece decirse en una linea.
+        print()
+        if not r['convergio']:
+            print(f"  VEREDICTO: el flujo NO converge ({r['motivo']}). El "
+                  f"sistema no aguanta esta salida.")
+        elif r['islas'] > 1:
+            # Una isla sin carga no deja a nadie a oscuras, pero se lleva por
+            # delante generacion y eso SI mueve la frecuencia. Contarlo solo
+            # por los MW de carga daba por limpia una separacion que estaba
+            # dejando centrales fuera del sistema.
+            print(f"  VEREDICTO: la red se SEPARA en {r['islas']} islas. Fuera "
+                  f"de la principal quedan {r['MW_desconectados']:.1f} MW de "
+                  f"carga")
+            print(f"  y {r['MW_gen_perdida']:.1f} MW de generacion; lo que "
+                  f"sigue describe solo la isla principal.")
+        elif r['n_sobrecargas'] or r['n_v_bajas'] or r['n_v_altas']:
+            print(f"  VEREDICTO: converge, pero con {r['n_sobrecargas']} "
+                  f"sobrecargas y {r['n_v_bajas'] + r['n_v_altas']} barras "
+                  f"fuera de 0,9-1,1 pu.")
+        else:
+            print("  VEREDICTO: N-1 limpio. Converge, sin sobrecargas y sin "
+                  "tensiones fuera de banda.")
         return 0
 
     tipos = {'linea': ('Line',), 'trafo': ('Transformer',),

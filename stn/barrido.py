@@ -1,5 +1,5 @@
 # barrido.py
-# Las 24 horas de una fecha, con la misma bateria en cada una.
+# Las 24 horas de una fecha, con las mismas pruebas en cada una.
 #
 # -------------------------------------------------------------------------
 # PARA QUE
@@ -422,8 +422,8 @@ def _pool_solar(tablas):
 
 def main():
     ap = argparse.ArgumentParser(
-        description='Somete las 24 horas de una o varias fechas a la misma '
-                    'bateria.')
+        description='Somete las 24 horas de una o varias fechas a las '
+                    'mismas pruebas.')
     ap.add_argument('--fecha', required=True, nargs='+', metavar='AAAA-MM-DD',
                     help='una o varias fechas; con varias se comparan al final')
     ap.add_argument('--periodos', default='1-24',

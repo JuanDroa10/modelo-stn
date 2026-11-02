@@ -246,7 +246,7 @@ casos = [
                                                                                float(nd.loads.p_set.sum()), 1.0),
     # El caso DIURNO entero. Sin estas filas, la mitad de las cifras publicadas
     # no tenia quien las vigilara: el bloque solo cubria la punta mas una sola
-    # cifra del diurno, justo cuando el diurno paso a tener bateria completa.
+    # cifra del diurno, justo cuando el diurno paso a tener pruebas completas.
     ("S_base diurna",        num(r'\| MVA sincronizados \| [\d\.,]+ \| ([\d\.,]+) \|'),
                                                                                sd.S_base,        1.0),
     ("H*S diurna",           num(r'Energía cinética H·S\*\* \| \*\*[\d\.,]+\*\* \| \*\*([\d\.,]+) MVA'),

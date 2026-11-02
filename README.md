@@ -13,7 +13,8 @@ Modelo del **Sistema de Transmisión Nacional** de 220/500 kV construido sobre
 
 El punto de operación puede venir de un caso de flujo de carga de PowerFactory
 o construirse para **cualquier fecha y periodo** a partir del despacho
-programado y el pronóstico de demanda por barra que publica XM.
+programado y el pronóstico de demanda por barra que publica XM, que el propio
+modelo descarga.
 
 > **Información derivada de fuentes públicas de XM S.A. E.S.P. (PARATEC,
 > `dDEC`, `PRON_BARRA`).** Los resultados describen un programa de despacho o
@@ -25,8 +26,12 @@ programado y el pronóstico de demanda por barra que publica XM.
   anteriores, así que con 3.10 la instalación falla. Compruébalo antes de
   empezar:
 
+  ```powershell
+  py --list          # Windows: los intérpretes instalados
+  ```
+
   ```bash
-  python3 --version
+  python3 --version  # macOS o Linux
   ```
 
   Si da 3.10 o menos, usa un intérprete más nuevo al crear el entorno.
@@ -37,35 +42,29 @@ programado y el pronóstico de demanda por barra que publica XM.
 ## Primeros pasos
 
 El repositorio trae los datos necesarios, de modo que **funciona sin internet
-desde el primer momento**. 
+desde el primer momento** (solo hace falta para descargar fechas nuevas).
 
-La forma de crear y activar el entorno virtual depende de tu sistema operativo:
-
-**En Windows (PowerShell):**
+### Windows (PowerShell)
 
 ```powershell
-# 1. Crear el entorno (usa `py -3.11`, `python` o `python3.12` según tu instalación)
 py -3.11 -m venv .venv
-
-# 2. Activar el entorno
 .\.venv\Scripts\Activate.ps1
-
-# 3. Instalar dependencias y ejecutar
 pip install -r requirements.txt
 python menu.py
 ```
 
-*Notas para Windows:*
-*   *Si PowerShell lanza un error de "ejecución de scripts deshabilitada", ejecuta primero `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` y vuelve a intentar la activación.*
-*   *Si instalaste Python desde la Microsoft Store, el comando `py` podría no detectarlo. En ese caso, crea el entorno llamando directamente al ejecutable (ej. `python3.12 -m venv .venv`).*
+Si `Activate.ps1` falla con un error de *execution policy* —lo habitual en una
+instalación recién hecha—, se permite solo para esta ventana y se vuelve a
+intentar:
 
-**En macOS o Linux (Bash):**
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+### macOS o Linux (Bash)
 
 ```bash
-# 1. Crear y activar el entorno en un solo paso
 python3.11 -m venv .venv && source .venv/bin/activate
-
-# 2. Instalar dependencias y ejecutar
 pip install -r requirements.txt
 python menu.py
 ```
@@ -80,9 +79,24 @@ SOBRE QUE SISTEMA QUIERES TRABAJAR
   3) una fecha concreta       (despacho y pronostico reales de XM)
 ```
 
-Después ofrece 22 opciones agrupadas en **simular**, **consultar el modelo** y
+La tercera lista las fechas que ya están en disco y, al final, **`otra fecha
+— descargarla de XM ahora`**: se escribe la fecha y el modelo se trae del
+portal público el despacho y el pronóstico de ese día. Hace falta internet
+solo para eso.
+
+Después ofrece 18 opciones agrupadas en **simular**, **consultar el modelo** y
 **análisis**. Cada una explica qué hace y cuánto tarda antes de lanzarla, y se
 puede cambiar de punto en cualquier momento con la tecla `p`.
+
+**[GUIA_DE_USO.md](GUIA_DE_USO.md) explica las 18 opciones una a una**, con
+todas sus subopciones, sus valores por defecto y qué significa cada pregunta.
+Es la referencia a la que volver cuando el menú pregunte algo que no sea obvio.
+
+El menú es la vía de uso del modelo, no la de su verificación: las
+comprobaciones internas —validación contra PowerFactory, invariantes, curva de
+capacidad de reactivo, construcción del caso diurno— siguen estando, pero como
+comandos (ver la tabla de abajo y la sección *Comprobaciones*), que es donde
+las necesita quien toca el código.
 
 ## Comandos
 
@@ -92,14 +106,17 @@ Todo lo que hace el menú está disponible también como módulo:
 |---|---|
 | `python -m stn.main` | flujo de carga, balance por área y mapas |
 | `python -m stn.contingencias` | barrido N-1 de 296 elementos |
+| `python -m stn.contingencias --caso "<elemento>"` | el N-1 de un solo elemento |
 | `python -m stn.agc_deslastre --perder-mw 3000` | dinámica de frecuencia, EDAC y AGC |
 | `python -m stn.deslastre_btm` | el algoritmo de deslastre consciente del BTM |
 | `python -m stn.cascada --escenario iberia` | cascada multironda |
 | `python -m stn.limites_reactivos` | curva de capacidad de reactivo |
 | `python -m stn.barrido --fecha 2026-10-20 --grafico` | las 24 horas de una fecha |
-| `python -m stn.comparar_casos` | punta y diurno, lado a lado |
+| `python -m stn.comparar_casos --caso-a punta --caso-b diurno:11` | dos puntos de operación, lado a lado |
+| `python -m stn.escenario_diurno` | cómo se deriva el caso diurno de la punta |
 | `python -m stn.validacion` | contraste contra PowerFactory |
 | `python -m stn.mapa_interactivo` | mapa HTML georreferenciado |
+| `python -m stn.fuentes.descarga_xm --fecha 2026-11-01` | trae una fecha nueva de XM |
 
 Los módulos de simulación aceptan `--diurno [HORA]` y
 `--fecha AAAA-MM-DD --periodo N` para correr sobre otro punto de operación:
@@ -110,6 +127,15 @@ python -m stn.deslastre_btm --diurno --comparar
 python -m stn.barrido --fecha 2026-10-20 2026-10-21 2026-10-24 --grafico
 ```
 
+`stn.comparar_casos` es la excepción, porque trabaja con **dos** puntos a la
+vez: cada columna se escribe como `punta`, `diurno:HORA` o
+`AAAA-MM-DD:PERIODO`. Así se enfrenta la hora crítica de un día a la punta de
+ese mismo día:
+
+```bash
+python -m stn.comparar_casos --caso-a 2026-10-20:5 --caso-b 2026-10-20:19
+```
+
 Las salidas se escriben en `resultados/`, con un sufijo por punto de operación
 (`_diurno11`, `_20261020p19`) para que una ejecución no pise a la otra.
 
@@ -118,14 +144,15 @@ Las salidas se escriben en `resultados/`, con un sufijo por punto de operación
 ```bash
 python -m tests.test_invariantes     # 34 invariantes del modelo
 python -m tests.test_regresion_pf    # 18 regresiones contra el caso congelado
-python -m tests.test_fuente_xm       # 41 de la fuente de datos de XM
-python -m tests.verificar_sistema    # 67 comprobaciones externas
+python -m tests.test_fuente_xm       # 52 de la fuente de datos de XM
+python -m tests.verificar_sistema    # 44 comprobaciones externas
 ```
 
 ## Estructura
 
 ```
 menu.py        punto de entrada interactivo
+GUIA_DE_USO.md el manual del menu, opcion por opcion
 stn/           el modelo
   paths.py       rutas, resueltas desde la raiz del repositorio
   config.py      parametros y banderas de comportamiento
@@ -135,9 +162,9 @@ data/
   red/           lineas, mapeo nodo-barra, contorno geografico
   punto_operacion/  el caso de PowerFactory extraido
   paratec/       reportes de PARATEC: capacidad, inercia, estatismo, reactivo
-  xm/            tres fechas de ejemplo, en la capa normalizada de sinsim
+  xm/            cuatro fechas de ejemplo; aqui aterrizan las que se bajen
   golden/        estado congelado del caso de referencia, para las regresiones
-tests/         las cuatro baterias de comprobacion
+tests/         los cuatro bancos de pruebas
 tools/         utilidades: recapturar el congelado
 ```
 
@@ -148,9 +175,47 @@ tools/         utilidades: recapturar el congelado
   máquina a máquina para 30 de las 45 barras generadoras.
 - **Despacho programado (`dDEC`) y pronóstico de demanda por barra
   (`PRON_BARRA`)** (XM): definen el punto de operación de una fecha concreta.
-  El repositorio incluye tres fechas de ejemplo; para descargar otras se usa
-  [sinsim](https://github.com/jucajata/sinsim) y se apunta la variable de
-  entorno `SINSIM_DATA` a su carpeta de datos.
+  El repositorio incluye cuatro fechas de ejemplo y
+  `stn.fuentes.descarga_xm` trae cualquier otra del portal público, sin
+  dependencias adicionales.
+
+### Traer otra fecha
+
+```bash
+python -m stn.fuentes.descarga_xm --fecha 2026-11-01
+```
+
+De un día solo son suyos **el despacho y el pronóstico de demanda**; eso es lo
+que se descarga. Las demás tablas del snapshot vienen de PARATEC, que es el
+registro del sistema y **no tiene histórico** —su API devuelve siempre el
+estado de hoy, se le pida la fecha que se le pida—, así que se heredan del
+snapshot más reciente que haya en disco y el `manifest.json` deja escrito de
+cuál. El modelo las usa solo como directorio: en qué subestación está cada
+barra, qué línea une qué, dónde se conecta cada unidad. Un recurso que el
+despacho nombre y el directorio no conozca no se cuela en silencio: baja la
+cobertura, que es lo que el menú enseña antes de dejar seguir.
+
+XM publica el despacho de un día la tarde anterior, de modo que la fecha más
+nueva que se puede pedir es mañana.
+
+Si el certificado del portal no se puede verificar —habitual detrás del proxy
+de una empresa, que firma con una raíz propia que Python no conoce—, hay que
+apuntar `SSL_CERT_FILE` a un almacén que sí la tenga:
+
+```powershell
+$env:SSL_CERT_FILE = "C:\ruta\a\cacert.pem"
+```
+
+```bash
+export SSL_CERT_FILE=/opt/homebrew/etc/ca-certificates/cert.pem
+```
+
+En Windows suele no hacer falta: Python lee el almacén de certificados del
+sistema, donde la raíz de la empresa ya está.
+
+Las fechas descargadas con [sinsim](https://github.com/jucajata/sinsim)
+también sirven: se apunta `SINSIM_DATA` a su carpeta de datos y el modelo lee
+de ahí en vez de `data/xm/`.
 - **Caso de flujo de carga de PowerFactory**: el punto de operación medido
   contra el que se contrasta el modelo.
 
@@ -170,7 +235,8 @@ ubicar** en el reporte de calidad y el modelo lo declara, en vez de rellenarlo
 en silencio. Un punto de operación que no alcance el 98 % de cobertura se marca
 como no apto para estudios de frecuencia y los barridos lo excluyen.
 
-Antes de abrir un *pull request*, las cuatro baterías de `tests/` deben pasar.
+Antes de abrir un *pull request*, los cuatro bancos de pruebas de `tests/`
+deben pasar.
 
 ## Licencia
 

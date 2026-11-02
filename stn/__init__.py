@@ -27,3 +27,30 @@ if sys.version_info < MINIMO:
         % (MINIMO[0], MINIMO[1], sys.version_info[0], sys.version_info[1]))
 
 __version__ = '1.0.0'
+
+
+# ---------------------------------------------------------------------------
+# EL RUIDO DE PYPSA
+# ---------------------------------------------------------------------------
+# `pypsa.Network()` llama a `logging.basicConfig(level=INFO)` dentro de su
+# propio constructor, de modo que basta con construir una red para que el
+# logger raiz se ponga a volcar por consola una linea
+#
+#     INFO:pypsa.network.power_flow:Performing non-linear load-flow on ...
+#
+# por CADA flujo que se resuelve. En un barrido N-1 de 296 elementos son 296
+# lineas de ruido entre quien mira la pantalla y la tabla de resultados, que
+# es lo unico que fue a leer.
+#
+# Se baja el nivel POR NOMBRE, y no con `logging.disable(INFO)`, que es un
+# interruptor global: apagaria de paso los INFO de cualquier otra biblioteca
+# y los del propio modelo el dia que los tenga. Los WARNING de pypsa ---el
+# que avisa de que un flujo NO ha convergido, el primero de todos--- siguen
+# saliendo, que es justo lo que no se puede perder por querer una consola
+# limpia.
+import logging as _logging
+
+for _ruidoso in ('pypsa', 'linopy'):
+    _logging.getLogger(_ruidoso).setLevel(_logging.WARNING)
+
+del _logging, _ruidoso
