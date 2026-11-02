@@ -207,6 +207,91 @@ def _fechas():
     return fechas_disponibles()
 
 
+def _elegir_fecha():
+    """La fecha de XM de la sesion. Devuelve None si no se eligio ninguna.
+
+    Durante mucho tiempo esta pantalla solo ofrecia las fechas que ya estaban
+    en disco, sin decir en ninguna linea que se pudieran conseguir mas: quien
+    clonaba el repositorio veia cuatro y concluia que el modelo solo sabia
+    simular esas cuatro. La ultima entrada de la lista arregla justo eso.
+    """
+    fechas = _fechas()
+    if not fechas:
+        print(_c("\n   no hay ninguna fecha en disco, y el descargador "
+                 "necesita al menos una para heredar el directorio de "
+                 "PARATEC. Recupera las que trae el repositorio en "
+                 "data/xm/paratec/.", '93'))
+        pausa()
+        return None
+    print()
+    parrafo("Fechas en disco:")
+    for i, f in enumerate(fechas):
+        print(f"     {i+1:2d}) {f}")
+    print(_c(f"     {len(fechas)+1:2d}) otra fecha  ---  descargarla de XM "
+             f"ahora", '96'))
+    print()
+    i = preguntar(f"cual (1-{len(fechas)+1})", len(fechas), int)
+    if i == len(fechas) + 1:
+        return _descargar_fecha()
+    return fechas[i - 1] if 1 <= i <= len(fechas) else fechas[-1]
+
+
+def _descargar_fecha():
+    """Pide una fecha y la trae del portal publico de XM.
+
+    Se dice ANTES de bajar nada que de PARATEC no se descarga nada, porque el
+    resultado tiene un snapshot entero y es facil suponer que todo el es de
+    esa fecha. No lo es, y conviene que no sea una sorpresa.
+    """
+    import datetime
+
+    from stn.fuentes import descarga_xm as DX
+
+    print()
+    parrafo("Se bajan del portal publico de XM los dos ficheros que SI son "
+            "de ese dia: el despacho programado (dDEC) y el pronostico de "
+            "demanda por barra (PRON_BARRA). Pesan unos 150 kB entre los "
+            "dos.")
+    print()
+    parrafo("El directorio de PARATEC ---que subestacion, que linea, que "
+            "unidad--- se hereda de la fecha mas reciente que ya este en "
+            "disco, porque PARATEC no tiene historico: su API devuelve "
+            "siempre el registro de hoy, se le pida la fecha que se le pida. "
+            "Si un recurso del despacho no estuviera en ese directorio, no "
+            "se colaria en silencio: bajaria la cobertura que sale aqui "
+            "debajo.")
+    print()
+    manana = datetime.date.today() + datetime.timedelta(days=1)
+    txt = preguntar("fecha (AAAA-MM-DD)", manana.isoformat())
+    if not txt:
+        return None
+    print()
+    try:
+        # Si ya esta en disco no hay nada que bajar: el usuario pedia esa
+        # fecha, no una descarga. Decirle que use `--forzar` ---una bandera
+        # de la linea de ordenes que aqui no existe--- seria mandarlo a otro
+        # programa para conseguir lo que acaba de pedir.
+        dia = DX.comprobar_fecha(txt).isoformat()
+        if dia in _fechas():
+            print(_c(f"   {dia} ya estaba en disco; se usa esa.", '92'))
+            return dia
+        DX.descargar_fecha(dia, verbose=True)
+        return dia
+    except DX.ErrorDescarga as e:
+        print()
+        # Se envuelve ANTES de colorear: textwrap cuenta los codigos ANSI
+        # como caracteres y partiria las lineas donde no toca.
+        for linea in str(e).splitlines():
+            for trozo in textwrap.wrap(' '.join(linea.split()),
+                                       ANCHO - 3) or ['']:
+                print(_c('   ' + trozo, '91'))
+        pausa()
+        return None
+    except KeyboardInterrupt:
+        print(_c("\n   descarga interrumpida", '93'))
+        return None
+
+
 def elegir_punto(primera_vez=False):
     """Elige el punto de operacion de la sesion. Devuelve True si cambio.
 
@@ -248,19 +333,9 @@ def elegir_punto(primera_vez=False):
                  'args': ['--diurno', str(hora)],
                  'etiqueta': f'diurno (HourNN={hora})'}
     else:
-        fechas = _fechas()
-        if not fechas:
-            print(_c("\n   no hay ninguna fecha descargada. Descargalas con "
-                     "sinsim; mira el README, seccion 1.", '93'))
-            pausa()
+        fecha = _elegir_fecha()
+        if fecha is None:
             return False
-        print()
-        parrafo("Fechas descargadas:")
-        for i, f in enumerate(fechas):
-            print(f"     {i+1:2d}) {f}")
-        print()
-        i = preguntar(f"cual (1-{len(fechas)})", len(fechas), int)
-        fecha = fechas[i - 1] if 1 <= i <= len(fechas) else fechas[-1]
         per = preguntar("periodo horario (1-24; 19 es la punta)", 19, int)
         per = min(max(int(per), 1), 24)
         nuevo = {'tipo': 'fecha', 'kw': {'fecha': fecha, 'periodo': per},
@@ -500,8 +575,10 @@ def sim_barrido():
     """
     fechas = _fechas()
     if not fechas:
-        print(_c("\n   no hay ninguna fecha descargada. Descargalas con "
-                 "sinsim; mira el README, seccion 1.", '93'))
+        print(_c("\n   no hay ninguna fecha en disco. Traete una con la "
+                 "tecla `p` (punto de operacion, opcion 3) o con\n"
+                 "   python -m stn.fuentes.descarga_xm --fecha AAAA-MM-DD",
+                 '93'))
         pausa()
         return
 
@@ -521,7 +598,7 @@ def sim_barrido():
     if actual and actual in fechas:
         fechas = [actual] + [f for f in fechas if f != actual]
     print()
-    parrafo("Fechas descargadas, de la mas reciente a la mas antigua. Las "
+    parrafo("Fechas en disco, de la mas reciente a la mas antigua. Las "
             "anteriores a septiembre de 2026 rara vez pasan el filtro de "
             "cobertura, y el barrido excluira sus horas del resumen:")
     for i, f in enumerate(fechas):

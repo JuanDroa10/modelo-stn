@@ -176,7 +176,8 @@ def cargar_snapshot(fecha, raiz=None):
         raise FileNotFoundError(
             f'no hay snapshot de {fecha} en {raiz}. '
             f'Disponibles: {disp if disp else "ninguna"}. '
-            f'Descargalo con:  sinsim scrape --fecha {fecha}')
+            f'Descargalo con:  python -m stn.fuentes.descarga_xm '
+            f'--fecha {fecha}')
     t = {}
     for nombre in TABLAS:
         p = os.path.join(base, f'{nombre}.parquet')

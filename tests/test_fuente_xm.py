@@ -19,6 +19,7 @@ import sys
 
 import pandas as pd
 
+from stn.fuentes import descarga_xm as DX
 from stn.fuentes import nombres as N
 from stn.fuentes.xm_snapshot import FuenteXM, fechas_disponibles
 
@@ -696,10 +697,189 @@ def test_una_fecha_sin_snapshot_dice_como_descargarla():
     try:
         FuenteXM('1999-01-01', 1, verbose=False)
     except FileNotFoundError as e:
-        assert 'sinsim scrape' in str(e), (
+        assert 'descarga_xm' in str(e), (
             f'el mensaje no dice como arreglarlo: {e}')
         return
     raise AssertionError('una fecha inexistente no fallo')
+
+
+# ---------------------------------------------------------------------------
+# El descargador
+#
+# NINGUNA de estas toca la red: el portal de XM no es nuestro y una bateria
+# que dependa de el falla los dias que XM este de mantenimiento, que es la
+# peor forma de fallar ---la que enseña a ignorar el rojo---. Lo que se fija
+# aqui son los dos formatos y las comprobaciones que impiden construir un
+# punto de operacion con un fichero a medias.
+# ---------------------------------------------------------------------------
+
+def _ddec(filas, totales=None):
+    """Un dDEC sintetico: {recurso: [24 valores]}."""
+    if totales is None:
+        totales = [sum(v[i] for v in filas.values()) for i in range(24)]
+    lineas = [f'"{k}",' + ','.join(f'{x:.4f}' for x in v)
+              for k, v in filas.items()]
+    lineas.append('"Total",' + ','.join(f'{x:.4f}' for x in totales))
+    return '\n'.join(lineas)
+
+
+def test_la_version_del_despacho_sale_del_nombre():
+    casos = {'dDEC1101.txt': 0, 'dDEC1101_V1.txt': 1, 'dDEC1101_V12.txt': 12,
+             'DDEC1101_v3.TXT': 3, 'PRON_BARRA1101.txt': None,
+             'dDEC1101.csv': None, 'dDEC110.txt': None}
+    for nombre, esperado in casos.items():
+        v = DX.version_ddec(nombre)
+        assert v == esperado, f'{nombre}: {v} en vez de {esperado}'
+
+
+def test_el_despacho_se_lee_en_MW_por_periodo():
+    t = _ddec({'A': [10.0] * 24, 'B': [5.5] * 24})
+    d = DX.leer_ddec(t, 'x')
+    assert list(d.columns) == ['resource', 'period', 'p_mw', 'source_id']
+    assert len(d) == 48, f'{len(d)} filas en vez de 48'
+    assert set(d.period) == set(range(1, 25))
+    # Un periodo dura una hora, asi que los MWh del estandar YA son los MW
+    # medios: si alguien mete un factor de conversion, esto lo caza.
+    assert abs(float(d[d.resource == 'A'].p_mw.iloc[0]) - 10.0) < 1e-9
+    assert abs(float(d.p_mw.sum()) - (10.0 + 5.5) * 24) < 1e-6
+
+
+def test_un_despacho_que_no_cuadra_con_su_Total_se_rechaza():
+    malos = [sum_ for sum_ in ([15.5] * 24,)]            # el bueno seria 15,5
+    t = _ddec({'A': [10.0] * 24, 'B': [5.5] * 24},
+              totales=[x + 1.0 for x in malos[0]])
+    try:
+        DX.leer_ddec(t, 'x')
+    except DX.ErrorDescarga as e:
+        assert 'Total' in str(e), f'el mensaje no habla del Total: {e}'
+        return
+    raise AssertionError('un despacho descuadrado se acepto: construiria un '
+                         'punto de operacion con generacion que XM no declara')
+
+
+def test_un_despacho_sin_fila_Total_se_rechaza():
+    t = '\n'.join(['"A",' + ','.join(['1.0'] * 24)])
+    try:
+        DX.leer_ddec(t, 'x')
+    except DX.ErrorDescarga:
+        return
+    raise AssertionError('un despacho sin Total se acepto')
+
+
+def test_el_despacho_acepta_los_dos_separadores_de_XM():
+    coma = _ddec({'A': [1.0] * 24})
+    puntoycoma = coma.replace(',', ';')
+    a = DX.leer_ddec(coma, 'x')
+    b = DX.leer_ddec(puntoycoma, 'x')
+    assert a.p_mw.tolist() == b.p_mw.tolist(), (
+        'el separador cambia el resultado')
+
+
+def _pron(nodos):
+    """Un PRON_BARRA sintetico: {(ucp, nodo, kv): {concepto: [24]}}."""
+    lineas = []
+    for (ucp, nodo, kv), conc in nodos.items():
+        for etiqueta, vals in conc.items():
+            lineas.append(f'{ucp},{nodo},{kv},{etiqueta},'
+                          + ','.join(f'{x:.4f}' for x in vals))
+    return '\n'.join(lineas)
+
+
+def test_la_demanda_separa_la_activa_de_las_perdidas_PSTR():
+    t = _pron({('U1', 'N1', '115'): {'Ener.Act.': [100.0] * 24,
+                                     'Ener.Reac': [30.0] * 24,
+                                     'Perd.PSTR': [2.0] * 24}})
+    d = DX.leer_pron_barra(t, 'x')
+    assert len(d) == 24, f'{len(d)} filas en vez de 24'
+    f = d.iloc[0]
+    # La activa del caso es la SUMA de las dos, pero el snapshot las guarda
+    # aparte y quien suma es el modelo. Fundirlas aqui escondería las
+    # perdidas por referir la carga a otro nivel de tension.
+    assert abs(float(f.p_act_mw) - 100.0) < 1e-9
+    assert abs(float(f.p_pstr_mw) - 2.0) < 1e-9
+    assert abs(float(f.q_mvar) - 30.0) < 1e-9
+    assert abs(float(f.vn_kv) - 115.0) < 1e-9
+
+
+def test_los_conceptos_valen_con_y_sin_punto_final():
+    con = _pron({('U', 'N', '115'): {'Ener.Act.': [1.0] * 24,
+                                     'Ener.Reac.': [2.0] * 24,
+                                     'Perd.PSTR.': [3.0] * 24}})
+    sin = _pron({('U', 'N', '115'): {'Ener.Act': [1.0] * 24,
+                                     'Ener.Reac': [2.0] * 24,
+                                     'Perd.PSTR': [3.0] * 24}})
+    a, b = DX.leer_pron_barra(con, 'x'), DX.leer_pron_barra(sin, 'x')
+    assert a.p_act_mw.tolist() == b.p_act_mw.tolist()
+
+
+def test_un_nodo_al_que_le_falta_un_concepto_se_rechaza():
+    t = _pron({('U', 'N', '115'): {'Ener.Act.': [1.0] * 24,
+                                   'Ener.Reac': [2.0] * 24}})
+    try:
+        DX.leer_pron_barra(t, 'x')
+    except DX.ErrorDescarga as e:
+        assert 'Perd.PSTR' in str(e) or 'p_pstr' in str(e), (
+            f'el mensaje no dice cual falta: {e}')
+        return
+    raise AssertionError('un nodo incompleto se acepto: su demanda saldria '
+                         'por debajo de la real')
+
+
+def test_no_se_aceptan_fechas_que_XM_no_ha_publicado():
+    import datetime
+    assert DX.comprobar_fecha('2026-10-20') == datetime.date(2026, 10, 20)
+    # La forma basica de ISO 8601 tambien vale, y se normaliza: la carpeta
+    # del snapshot sale siempre de .isoformat(), nunca de lo que se tecleo.
+    assert DX.comprobar_fecha('20261020') == datetime.date(2026, 10, 20)
+    lejos = (datetime.date.today() + datetime.timedelta(days=30)).isoformat()
+    for malo in ('ayer', '2026-13-01', '20-10-2026', lejos):
+        try:
+            DX.comprobar_fecha(malo)
+        except DX.ErrorDescarga:
+            continue
+        raise AssertionError(f'{malo!r} se acepto como fecha')
+
+
+def test_el_listado_del_portal_se_lee_de_su_envoltura():
+    import json as _json
+
+    crudo = _json.dumps({'ficheros': [
+        {'nombre': 'dDEC1101.txt', 'fechaModificacion': '2026-10-31T14:24:36'},
+        {'nombre': 'dDEC1101_V1.txt'},
+        {'nombre': 'OTRA_COSA.txt'},
+    ], 'cantidadFicheros': 3}).encode('utf-8')
+
+    vistos = []
+
+    def falso(url, params=None):
+        vistos.append(params)
+        return crudo
+
+    real, DX._get = DX._get, falso
+    try:
+        r = DX.listar(DX.DIR_DESPACHO, '2026-11', 'dDEC1101')
+    finally:
+        DX._get = real
+    assert [n for n, _ in r] == ['dDEC1101.txt', 'dDEC1101_V1.txt'], (
+        f'el prefijo no filtro: {r}')
+    assert r[0][1] == '2026-10-31T14:24:36'
+    assert vistos[0]['ruta'] == f'{DX.DIR_DESPACHO}/2026-11'
+
+
+def test_un_listado_con_otra_forma_se_denuncia():
+    def falso(url, params=None):
+        return b'<html>mantenimiento</html>'
+
+    real, DX._get = DX._get, falso
+    try:
+        DX.listar(DX.DIR_DESPACHO, '2026-11', 'dDEC')
+    except DX.ErrorDescarga as e:
+        assert 'API' in str(e) or 'JSON' in str(e), (
+            f'el mensaje no apunta a la API: {e}')
+        return
+    finally:
+        DX._get = real
+    raise AssertionError('una respuesta que no es JSON se acepto')
 
 
 # ---------------------------------------------------------------------------
