@@ -1,0 +1,21 @@
+# Modelo del STN colombiano en PyPSA
+# Probado con Python 3.11.
+
+pypsa>=1.3,<2.0
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+networkx>=3.0
+matplotlib>=3.7
+
+# Lectura de los reportes de PARATEC (.xlsx)
+openpyxl>=3.1
+
+# Snapshots de XM en formato parquet
+pyarrow>=14.0
+
+# MILP del deslastre consciente del BTM
+highspy>=1.5
+
+# Mapa interactivo
+folium>=0.15

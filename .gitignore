@@ -1,0 +1,38 @@
+# --- Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+build/
+dist/
+
+# --- Entornos virtuales
+# Con comodin a proposito: la plantilla habitual solo cubre `.venv/`, y basta
+# que alguien llame al suyo `.venv311` o `venv3.12` ---cosa normal cuando se
+# tienen varias versiones de Python--- para subir doce mil ficheros y cien
+# megas de dependencias sin enterarse. Comprobado: pasa.
+.venv*/
+venv*/
+env/
+ENV/
+# y por si el entorno acaba con otro nombre cualquiera
+**/site-packages/
+**/pyvenv.cfg
+
+# --- Salidas de simulacion
+resultados/
+stn_network_georef*/
+*.html
+!data/**/*.html
+
+# --- Snapshots de XM descargados por el usuario
+# Las tres fechas de ejemplo SI van al repositorio; lo que descargue
+# `sinsim scrape` despues, no.
+data/xm/paratec/*/raw/
+
+# --- Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

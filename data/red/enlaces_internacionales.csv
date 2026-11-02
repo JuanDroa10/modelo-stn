@@ -1,0 +1,2 @@
+recurso,bus_colombia,bus_exterior,nota
+ECUADOR230_1,JAMONDINO__230,PIMAMPIRO__230,"Interconexion Colombia-Ecuador a 230 kV: cuatro circuitos Jamondino-Pimampiro de 445 MVA cada uno. PIMAMPIRO es la subestacion de CELEC EP en Imbabura (Ecuador) y en el modelo es una hoja: solo cuelga de JAMONDINO, asi que abrir los cuatro circuitos la deja aislada y nada mas. El recurso aparece en el dDEC de XM, y sinsim lo clasifica como intl_link con barra de conexion JAMONDINO|230 en data/equivalencias/recursos_despacho.csv."

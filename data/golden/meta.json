@@ -1,0 +1,106 @@
+{
+  "capturado_en": "2026-11-02T00:14:42.555058+00:00",
+  "caso": "punta nocturna (PowerFactory, Datos/pq_completo.csv)",
+  "conteos": {
+    "buses": 148,
+    "cargas": 100,
+    "control": {
+      "PQ": 13,
+      "PV": 31,
+      "Slack": 1
+    },
+    "generadores": 45,
+    "ramas": 296
+  },
+  "diagnostico": {
+    "carga_MW": 11566.6,
+    "carga_max_pct": 85.51316680212135,
+    "n_sobrecargados": 0,
+    "n_v_altas": 0,
+    "n_v_bajas": 0,
+    "v_max": 1.0874537170408773,
+    "v_min": 0.9914233958638375
+  },
+  "dinamica": {
+    "H": 3.8000948398832493,
+    "H_por_S_base": 53271.312838333346,
+    "P_carga": 11566.6,
+    "P_gen": 11689.694150126337,
+    "P_perdidas": 123.0941501263465,
+    "R_eq": 0.05019410266523399,
+    "S_base": 14018.416666666668,
+    "S_instalada": 17578.73,
+    "frac_acoplada": 0.7974647011852772,
+    "frac_reserva_hidro": 0.8445954583065746,
+    "mw_H_real": 11669.166666666668,
+    "n_H_real": 30.0,
+    "n_R_real": 30.0,
+    "reserva": 870.9526666666669,
+    "reserva_baja": 1212.966666666667,
+    "reserva_excluida": 188.875
+  },
+  "flags_config": {
+    "DESGLOSE_BRUTO": true,
+    "INCLUIR_COMPLEMENTOS": true,
+    "LIMITES_REACTIVOS": true,
+    "PF_METHOD": "NR",
+    "PF_TOLERANCE": 1e-06,
+    "STN_KV_MIN": 200.0,
+    "TRAFO_PARATEC": false,
+    "VOLTAGE_MAX": 550,
+    "VOLTAGE_MIN": 200
+  },
+  "hashes_entrada": {
+    "data/punto_operacion/edge_2034.csv": "0305ed9909752cb69431f8bfa895aa23372c5f788cba8948249c3fdacf9cdafa",
+    "data/punto_operacion/pq_completo.csv": "a94829cd6659ae49cc3d2b5e64de3804c59c965f9a648dcf64a569de62db212b",
+    "data/red/lineas_200a500kV_con_coordenadas.csv": "ffd462f5270cc0c706d6f01205f2106e6bcab60d6bb5925375337a885403c6bb",
+    "data/red/lineas_completas.csv": "6be07ee8fb49bd538d6de4b3f36523a8b5be7f7ac2438df2e3ee259de1de7d4f",
+    "data/red/mapeo_STN.csv": "e0ddce6cc5175f96fbec6ab4db047cb35818c97b47544976ddcd80b1e43fb2fd"
+  },
+  "metricas": {
+    "difuso": {
+      "comparables": 39,
+      "correlacion": 0.8051454764693672,
+      "dentro_100_pct": 100.0,
+      "dentro_10_pct": 30.76923076923077,
+      "dentro_25_pct": 66.66666666666666,
+      "dentro_50_pct": 87.17948717948718,
+      "lineas_modelo": 205,
+      "lineas_reporte": 50,
+      "mae_mw": 23.361538461538462,
+      "mediana_mw": 20.6
+    },
+    "estricto": {
+      "correlacion": 0.8140210291084492,
+      "dentro_10": 7,
+      "dentro_25": 18,
+      "emparejadas": 24,
+      "mae_mw": 22.895833333333332
+    }
+  },
+  "mw_por_tipo": {
+    "desconocido": 368.4,
+    "eolica": 1511.0,
+    "hidraulica": 8813.6,
+    "termica": 994.1
+  },
+  "resumen_integrar": {
+    "P_demanda": 8969.3,
+    "P_inyeccion": 9089.8,
+    "P_sin_asignar": 0.0,
+    "P_sin_equivalente": 175.5,
+    "P_total": 120.4999999999992,
+    "buses_con_datos": 116.0,
+    "clave_no_encontrada": [],
+    "nodos_asignados": 129.0,
+    "nodos_reporte": 137.0,
+    "nodos_sin_asignar": 0.0,
+    "nodos_sin_equivalente": 1.0
+  },
+  "versiones": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.6",
+    "pypsa": "1.3.0",
+    "python": "3.11.14"
+  }
+}

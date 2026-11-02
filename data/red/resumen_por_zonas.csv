@@ -1,0 +1,24 @@
+Area,Subarea,GenP,LoadP,LossP,TotLoadP,TotLoadQ,LossQ,InterP,InterQ
+Caribe,Total,3419.75,2829.79,105.22,,,,,
+Caribe,Atlántico,,,6.96,785.32,324.99,-233.65,-28.18,-244.83
+Caribe,GCM,,,66.87,726.60,276.23,-1813.64,1926.04,-29.15
+Caribe,Bolívar,,,13.39,554.36,209.18,-448.11,-540.75,178.57
+Caribe,Córdoba-Sucre,,,13.07,524.99,231.26,-477.05,-207.41,6.40
+Caribe,Cerromatoso,,,5.66,238.52,66.80,-684.67,28.82,16.86
+Antioquia,Total,3291.11,1442.61,46.26,,,,,
+Antioquia,Antioquia,,,46.26,1442.61,539.60,-275.85,1802.23,-280.61
+Nordeste,Total,976.30,1178.88,20.60,,,,,
+Nordeste,Arauca,,,2.57,100.75,34.74,-43.82,-103.32,-5.02
+Nordeste,Santander,,,9.10,499.92,219.52,-777.30,-241.62,49.42
+Nordeste,Boyaca-Casanare,,,5.13,343.15,157.23,-79.72,27.63,-35.53
+Nordeste,Norte de Santander,,,4.01,254.95,120.24,-41.01,74.86,38.61
+Oriental,Total,1451.99,2840.11,53.12,,,,,
+Oriental,Bogotá,,,46.13,2519.66,803.43,-692.35,-1133.80,131.16
+Oriental,Meta,,,6.98,320.45,104.39,-58.07,-327.43,-0.23
+Suroccidental,Total,1368.32,2598.64,67.04,,,,,
+Suroccidental,CQR,,,25.70,503.76,164.87,-493.40,-112.49,81.09
+Suroccidental,Putumayo,,,0.07,30.82,10.04,-5.80,-30.89,-30.47
+Suroccidental,Valle,,,17.40,1114.15,329.23,-486.83,-636.62,61.33
+Suroccidental,Huila-Tolima,,,12.52,501.41,226.79,-25.84,-207.92,-92.64
+Suroccidental,Cauca-Nariño,,,9.04,337.39,101.05,-333.93,-176.01,74.42
+Suroccidental,Caquetá,,,2.32,111.11,54.48,-73.02,-113.43,18.54
