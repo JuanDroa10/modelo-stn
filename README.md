@@ -1,4 +1,4 @@
-# modelo-stn — dinámica de frecuencia del STN colombiano
+# Modelo-stn — dinámica de frecuencia del STN colombiano
 
 Modelo del **Sistema de Transmisión Nacional** de 220/500 kV construido sobre
 [PyPSA](https://pypsa.org/), con cuatro capas de análisis sobre él:
