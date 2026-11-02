@@ -38,10 +38,32 @@ programado y el pronóstico de demanda por barra que publica XM.
 ## Primeros pasos
 
 El repositorio trae los datos necesarios, de modo que **funciona sin internet
-desde el primer momento**:
+desde el primer momento**. 
+
+La forma de crear y activar el entorno virtual depende de tu sistema operativo:
+
+**En Windows (PowerShell):**
+
+```powershell
+# 1. Crear el entorno (usa `python` o `py -3.11` según tu instalación)
+python -m venv .venv
+
+# 2. Activar el entorno
+.\.venv\Scripts\Activate.ps1
+
+# 3. Instalar dependencias y ejecutar
+pip install -r requirements.txt
+python menu.py
+```
+*(Nota: Si PowerShell lanza un error de "ejecución de scripts deshabilitada", ejecuta primero `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` y vuelve a intentar la activación).*
+
+**En macOS o Linux (Bash):**
 
 ```bash
+# 1. Crear y activar el entorno en un solo paso
 python3.11 -m venv .venv && source .venv/bin/activate
+
+# 2. Instalar dependencias y ejecutar
 pip install -r requirements.txt
 python menu.py
 ```
